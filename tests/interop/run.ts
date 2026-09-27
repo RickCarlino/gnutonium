@@ -4,6 +4,7 @@ import fs from "node:fs/promises";
 import net from "node:net";
 import os from "node:os";
 import path from "node:path";
+import { createCacheState } from "../../src/discovery/gwebcache/state";
 import type { GnutellaEvent } from "../../src/types";
 import { captureNetwork } from "./capture";
 
@@ -235,7 +236,7 @@ async function run() {
       downloadsDir: bunShares,
       dataDir: path.join(dir, "bun-data"),
       incompleteDownloadsDir: path.join(dir, "bun-partial"),
-      gwebCacheUrls: [],
+      gwebCaches: createCacheState([]),
       nodeMode: gtkLeaf ? "ultrapeer" : "leaf",
       ultrapeer: gtkLeaf,
       enableTls: tls,
@@ -257,7 +258,7 @@ async function run() {
           downloadsDir: path.join(dir, "anchor-shares"),
           dataDir: path.join(dir, "anchor-data"),
           incompleteDownloadsDir: path.join(dir, "anchor-partial"),
-          gwebCacheUrls: [],
+          gwebCaches: createCacheState([]),
           nodeMode: "ultrapeer",
           ultrapeer: true,
           enableTls: tls,

@@ -1,4 +1,5 @@
 import { expect, test } from "bun:test";
+import { createCacheState } from "../../../src/discovery/gwebcache/state";
 import { PeerDiscovery } from "../../../src/discovery/runtime";
 import { connectBootstrapPeers } from "../../../src/gwebcache_client";
 import type { PeerState } from "../../../src/types";
@@ -22,7 +23,7 @@ function discovery(
       config: () => ({
         blockedIps: [],
         peerSeenThresholdSec: 60,
-        gwebCacheUrls: ["http://cache.test/"],
+        gwebCaches: createCacheState(["http://cache.test/"]),
         vendorCode: "TEST",
         userAgent: "Test/1.0",
         maxLeafConnections: 4,
@@ -38,6 +39,7 @@ function discovery(
       connectedLeafCount: () => 0,
       connectedMeshPeerCount: () => 0,
       availableDialSlots: () => 4,
+      isPeerBusy: () => false,
       connectPeer,
       currentAdvertisedHost: () => "127.0.0.1",
       currentAdvertisedPort: () => 6346,

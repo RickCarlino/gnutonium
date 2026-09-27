@@ -72,7 +72,7 @@ Most people won't need to change much beyond the data directory and networking s
 | `config.advertised_ip`                | Public IPv4 address other peers should use to reach you. Useful when your public address differs from your local bind address.                           |
 | `config.advertised_port`              | Public TCP port other peers should use to reach you.                                                                                                     |
 | `config.blocked_ips`                  | IPv4 addresses Gnutonium should refuse, forget, and stop dialing.                                                                                        |
-| `config.gwebcache_urls`               | Overrides the built-in Gnutella Web Cache list. Mostly useful for development or private networks.                                                       |
+| `config.gwebcaches`               | Cache objects keyed by URL, including configured and discovered caches. Missing or empty collections are populated with bundled defaults.                                                       |
 | `config.ultrapeer`                    | Set to `true` to run as an ultrapeer. Leave it `false` for a normal lightweight client.                                                                  |
 | `config.max_ultrapeer_connections`    | Maximum number of ultrapeer-to-ultrapeer connections.                                                                                                    |
 | `config.max_leaf_connections`         | Maximum number of leaf connections.                                                                                                                      |

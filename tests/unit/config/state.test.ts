@@ -9,6 +9,7 @@ import {
   rememberPeerInState,
   sortPeerStateEntries,
 } from "../../../src/config";
+import { createCacheState } from "../../../src/discovery/gwebcache/state";
 import type { ConfigDoc, RuntimeConfig } from "../../../src/types";
 
 function runtime(patch: Partial<RuntimeConfig> = {}): RuntimeConfig {
@@ -18,7 +19,7 @@ function runtime(patch: Partial<RuntimeConfig> = {}): RuntimeConfig {
     advertisedHost: "72.14.201.10",
     advertisedPort: 7777,
     blockedIps: ["66.132.55.12"],
-    gwebCacheUrls: ["http://cache.example.com/gcache.php"],
+    gwebCaches: createCacheState(["http://cache.example.com/gcache.php"]),
     ultrapeer: true,
     monitorIgnoreEvents: ["PONG"],
     nodeMode: "ultrapeer",
@@ -163,7 +164,8 @@ describe("persistence document builders", () => {
       advertised_ip: "72.14.201.10",
       advertised_port: 7777,
       blocked_ips: ["66.132.55.12"],
-      gwebcache_urls: ["http://cache.example.com/gcache.php"],
+      gwebcaches: createCacheState(["http://cache.example.com/gcache.php"])
+        .entries,
       ultrapeer: true,
       max_ultrapeer_connections: 4,
       max_leaf_connections: 8,
@@ -217,7 +219,9 @@ describe("persistence document builders", () => {
         listen_ip: "0.0.0.0",
         listen_port: 6346,
         advertised_ip: "72.14.201.10",
-        gwebcache_urls: ["http://cache.example.com/gcache.php"],
+        gwebcaches: createCacheState([
+          "http://cache.example.com/gcache.php",
+        ]).entries,
         ultrapeer: true,
         max_ultrapeer_connections: 4,
         max_leaf_connections: 8,

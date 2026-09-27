@@ -2,6 +2,7 @@ import { expect, test } from "bun:test";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { CommandRunner } from "../../src/cli/runner";
+import { createCacheState } from "../../src/discovery/gwebcache/state";
 import type { DownloadJob } from "../../src/downloads";
 import { executeLine, executionContext } from "../helpers/cli";
 import {
@@ -17,7 +18,9 @@ test("localhost runner batches real search results and queued jobs without publi
     await withTempDir(async (dir) => {
       const node = makeNode(path.join(dir, "config.json"), {
         runtimeConfig: {
-          gwebCacheUrls: [`http://127.0.0.1:${server.port}/cache`],
+          gwebCaches: createCacheState([
+            `http://127.0.0.1:${server.port}/cache`,
+          ]),
         },
       });
       const logs: string[] = [];

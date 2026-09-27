@@ -1,81 +1,23 @@
-import {
-  addPeerCandidatesToKnownSet,
-  normalizePeerCandidates,
-  peerCandidateSetKey,
-  shouldFetchFreshPeerCandidates,
-} from "..";
-import {
-  describeHttpError,
-  describeUpdateError,
-  requestGWebCache,
-} from "./response";
+import { addPeerCandidatesToKnownSet, normalizePeerCandidates } from "..";
+import { accessCache, confirmCacheHost } from "./policy";
+import { describeUpdateError } from "./response";
 import {
   aliveCachesForState,
   DEFAULT_MAX_BOOTSTRAP_CACHES,
-  DEFAULT_MAX_BOOTSTRAP_PEERS,
   DEFAULT_MAX_CACHES,
   DEFAULT_MAX_PEERS,
   normalizeGWebCachePeer,
-  rememberAliveCaches,
-  seedCacheList,
 } from "./shared";
 import type {
   BootstrapOptions,
   BootstrapResult,
   ConnectBootstrapOptions,
   ConnectBootstrapResult,
-  GWebCacheBootstrapState,
   GWebCacheHttpResponse,
   GWebCacheRequestOptions,
   ReportSelfOptions,
   ReportSelfResult,
 } from "./types";
-
-function buildReportReferenceUrl(
-  cache: string,
-  knownAliveCaches: readonly string[],
-  seedCaches: readonly string[],
-  fallbackCache: string,
-): string {
-  return (
-    knownAliveCaches.find((candidate) => candidate !== cache) ||
-    seedCaches.find((candidate) => candidate !== cache) ||
-    fallbackCache
-  );
-}
-
-async function reportSelfToCache(
-  cache: string,
-  peer: string,
-  referenceUrl: string,
-  options: ReportSelfOptions,
-): Promise<{ reported: boolean; message?: string }> {
-  try {
-    const result = await requestGWebCache(cache, {
-      mode: "update",
-      client: options.client,
-      version: options.version,
-      spec: 2,
-      ip: peer,
-      url: referenceUrl,
-      cluster: options.cluster,
-      leafCount: options.leafCount,
-      maxLeaves: options.maxLeaves,
-      uptimeSec: options.uptimeSec,
-      timeoutMs: options.timeoutMs,
-      signal: options.signal,
-      fetchImpl: options.fetchImpl,
-    });
-    if (result.ok && result.spec && result.update?.ok)
-      return { reported: true };
-    return { reported: false, message: describeUpdateError(result) };
-  } catch (error) {
-    return {
-      reported: false,
-      message: error instanceof Error ? error.message : String(error),
-    };
-  }
-}
 
 function emptyConnectBootstrapResult(
   attemptedPeers: string[],
@@ -89,20 +31,6 @@ function emptyConnectBootstrapResult(
   };
 }
 
-function shouldSkipCacheBootstrap(
-  candidates: ReturnType<typeof normalizePeerCandidates>,
-  initialAttempt: Awaited<ReturnType<typeof connectBootstrapPeerSet>>,
-  candidateKey: string,
-  state: GWebCacheBootstrapState | undefined,
-): boolean {
-  return !shouldFetchFreshPeerCandidates({
-    candidates,
-    initialAttempt,
-    candidateKey,
-    state,
-  });
-}
-
 function buildBootstrapFetchOptions(
   options: ConnectBootstrapOptions,
 ): BootstrapOptions {
@@ -112,9 +40,12 @@ function buildBootstrapFetchOptions(
     version: options.version,
     network: options.network,
     timeoutMs: options.timeoutMs,
-    maxPeers: options.maxBootstrapPeers || DEFAULT_MAX_BOOTSTRAP_PEERS,
+    maxPeers: options.maxBootstrapPeers || DEFAULT_MAX_PEERS,
     maxCaches: options.maxBootstrapCaches || DEFAULT_MAX_BOOTSTRAP_CACHES,
-    queryAll: true,
+    state: options.state,
+    now: options.now,
+    random: options.random,
+    persist: options.persist,
     signal: options.signal,
     fetchImpl: options.fetchImpl,
   };
@@ -144,18 +75,24 @@ async function fetchAndRetryBootstrapPeers(
   const bootstrap = await fetchBootstrapData(
     buildBootstrapFetchOptions(options),
   );
-  rememberAliveCaches(options.state, bootstrap.successfulCaches);
-  const discovered = normalizePeerCandidates(
-    bootstrap.peers,
-    options.isSelfPeer,
-  ).filter((peer) => !knownPeers.has(peer.peer));
+
+  const discovered = dialCandidates(bootstrap.peers, options).filter(
+    (peer) => !knownPeers.has(peer.peer),
+  );
   const addedPeers = addDiscoveredBootstrapPeers(
     discovered,
     knownPeers,
     options.addPeer,
   );
+  const retryAttempt = await connectBootstrapPeerSet(discovered, options);
+  if (retryAttempt.successCount && bootstrap.queriedCaches[0])
+    await confirmCacheHost(
+      options,
+      bootstrap.queriedCaches[0],
+      bootstrap.caches,
+    );
   return {
-    retryAttempt: await connectBootstrapPeerSet(discovered, options),
+    retryAttempt,
     addedPeers,
     queriedCaches: bootstrap.queriedCaches,
     errors: bootstrap.errors,
@@ -170,6 +107,8 @@ async function connectBootstrapPeerSet(
     | "connectConcurrency"
     | "connectPeer"
     | "connectTimeoutMs"
+    | "signal"
+    | "canDialPeer"
   >,
 ): Promise<{
   attemptedPeers: string[];
@@ -189,8 +128,13 @@ async function connectBootstrapPeerSet(
 
   const dialNext = async (): Promise<void> => {
     while (next < peers.length) {
-      if (options.availableSlots() <= 0) return;
+      if (options.availableSlots() <= 0 || options.signal?.aborted) return;
       const peer = peers[next++];
+      if (
+        options.canDialPeer &&
+        !options.canDialPeer(peer.host, peer.port)
+      )
+        continue;
       attemptedPeers.push(peer.peer);
       try {
         await options.connectPeer(
@@ -231,6 +175,7 @@ function buildBootstrapRequestOptions(
 ): GWebCacheRequestOptions {
   return {
     mode: "get",
+    spec: 2,
     network: options.network || "gnutella",
     client: options.client,
     version: options.version,
@@ -240,69 +185,33 @@ function buildBootstrapRequestOptions(
   };
 }
 
-function bootstrapResponseError(
-  result: GWebCacheHttpResponse,
-): string | undefined {
-  if (!result.ok) return describeHttpError(result);
-  if (!result.spec) return "unexpected non-spec2 gwebcache response";
-  return undefined;
-}
-
-async function queryBootstrapCache(
-  cache: string,
-  options: BootstrapOptions,
-): Promise<{ result?: GWebCacheHttpResponse; error?: string }> {
-  try {
-    return {
-      result: await requestGWebCache(
-        cache,
-        buildBootstrapRequestOptions(options),
-      ),
-    };
-  } catch (error) {
-    return {
-      error: error instanceof Error ? error.message : String(error),
-    };
-  }
-}
-
 /** Collect peer and cache addresses from seed caches. */
 export async function fetchBootstrapData(
   options: BootstrapOptions = {},
 ): Promise<BootstrapResult> {
-  const seedCaches = seedCacheList(options.caches);
-  const maxPeers = Math.max(1, options.maxPeers ?? DEFAULT_MAX_PEERS);
-  const maxCaches = Math.max(1, options.maxCaches ?? DEFAULT_MAX_CACHES);
   const peers = new Set<string>();
   const caches = new Set<string>();
-  const successfulCaches = new Set<string>();
-  const queriedCaches: string[] = [];
-  const errors: BootstrapResult["errors"] = [];
-
-  for (const cache of seedCaches) {
-    if (!options.queryAll && peers.size >= maxPeers) break;
-    queriedCaches.push(cache);
-    const outcome = await queryBootstrapCache(cache, options);
-    if (outcome.error) {
-      errors.push({ cache, message: outcome.error });
-      continue;
-    }
-    const result = outcome.result!;
-    mergeBootstrapResponse(result, peers, caches, maxPeers, maxCaches);
-    const message = bootstrapResponseError(result);
-    if (message) {
-      errors.push({ cache, message });
-      continue;
-    }
-    successfulCaches.add(cache);
-  }
-
+  const outcome = await accessCache(
+    options,
+    buildBootstrapRequestOptions(options),
+  );
+  if (outcome.result)
+    mergeBootstrapResponse(
+      outcome.result,
+      peers,
+      caches,
+      Math.max(1, options.maxPeers ?? DEFAULT_MAX_PEERS),
+      Math.max(1, options.maxCaches ?? DEFAULT_MAX_CACHES),
+    );
   return {
     peers: [...peers],
     caches: [...caches],
-    queriedCaches,
-    successfulCaches: [...successfulCaches],
-    errors,
+    queriedCaches: outcome.cache ? [outcome.cache] : [],
+    successfulCaches: verifiedResponseCaches(options, outcome.cache),
+    errors:
+      outcome.cache && outcome.error
+        ? [{ cache: outcome.cache, message: outcome.error }]
+        : [],
   };
 }
 
@@ -322,137 +231,94 @@ export async function reportSelfToGWebCaches(
   if (!peer)
     throw new Error(`invalid gwebcache peer update: ${options.ip}`);
 
-  const seedCaches = seedCacheList(options.caches);
-  const errors: BootstrapResult["errors"] = [];
-  const reportedCaches: string[] = [];
-  const attemptedCaches: string[] = [];
-
-  let knownAliveCaches = aliveCachesForState(options.state);
-  const referenceCache = knownAliveCaches[0] || seedCaches[0];
-  if (!referenceCache) {
-    return {
-      referenceCache: undefined,
-      attemptedCaches,
-      reportedCaches,
-      errors,
-    };
-  }
-
-  for (const cache of seedCaches) {
-    attemptedCaches.push(cache);
-    const result = await reportSelfToCache(
-      cache,
-      peer,
-      buildReportReferenceUrl(
-        cache,
-        knownAliveCaches,
-        seedCaches,
-        referenceCache,
-      ),
-      options,
-    );
-    if (result.reported) {
-      reportedCaches.push(cache);
-      rememberAliveCaches(options.state, [cache]);
-      knownAliveCaches = aliveCachesForState(options.state);
-      continue;
-    }
-    if (result.message) errors.push({ cache, message: result.message });
-  }
-
+  const referenceCache = aliveCachesForState(options.state)[0];
+  const outcome = await accessCache(options, {
+    mode: "get",
+    network: "gnutella",
+    spec: 2,
+    client: options.client,
+    version: options.version,
+    ip: peer,
+    // Never advertise a seed or referral that has not worked this session.
+    url: referenceCache,
+    cluster: options.cluster,
+    leafCount: options.leafCount,
+    maxLeaves: options.maxLeaves,
+    uptimeSec: options.uptimeSec,
+    timeoutMs: options.timeoutMs,
+    signal: options.signal,
+    fetchImpl: options.fetchImpl,
+  });
+  const error = reportError(outcome.error, outcome.result);
   return {
     referenceCache,
-    attemptedCaches,
-    reportedCaches,
-    errors,
+    attemptedCaches: outcome.cache ? [outcome.cache] : [],
+    reportedCaches:
+      outcome.cache && outcome.result?.update?.ok ? [outcome.cache] : [],
+    errors:
+      outcome.cache && error
+        ? [{ cache: outcome.cache, message: error }]
+        : [],
   };
 }
 
-function bootstrapSatisfied(
-  successCount: number,
-  connectedCount: number,
-): boolean {
-  return successCount > 0 || connectedCount > 0;
+function dialCandidates(
+  peers: readonly string[],
+  options: ConnectBootstrapOptions,
+) {
+  return normalizePeerCandidates(peers, options.isSelfPeer)
+    .filter(
+      (peer) =>
+        !options.canDialPeer || options.canDialPeer(peer.host, peer.port),
+    )
+    .slice(0, options.maxBootstrapPeers ?? DEFAULT_MAX_PEERS);
 }
 
-function clearExhaustedPeerSet(
-  state: GWebCacheBootstrapState | undefined,
-): void {
-  if (state) state.lastExhaustedPeerSet = undefined;
+function hasCapacity(options: ConnectBootstrapOptions): boolean {
+  return !options.signal?.aborted && options.availableSlots() > 0;
 }
 
-function startCacheBootstrap(
-  state: GWebCacheBootstrapState | undefined,
-  candidateKey: string,
-): void {
-  if (!state) return;
-  state.active = true;
-  state.lastExhaustedPeerSet = candidateKey;
-}
-
-function finishCacheBootstrap(
-  state: GWebCacheBootstrapState | undefined,
-): void {
-  if (state) state.active = false;
-}
-
-/** Try known peers, then fetch and retry fresh candidates. */
+/** One discovery tick: try dialable peers, then at most one eligible cache. */
 export async function connectBootstrapPeers(
   options: ConnectBootstrapOptions,
 ): Promise<ConnectBootstrapResult> {
-  const candidates = normalizePeerCandidates(
-    options.peers,
-    options.isSelfPeer,
-  );
-  const candidateKey = peerCandidateSetKey(candidates);
-  const knownPeers = new Set(candidates.map((peer) => peer.peer));
-  const initialAttempt = await connectBootstrapPeerSet(
-    candidates,
-    options,
-  );
-
-  if (
-    bootstrapSatisfied(
-      initialAttempt.successCount,
-      options.connectedCount(),
-    )
-  ) {
-    clearExhaustedPeerSet(options.state);
-    return emptyConnectBootstrapResult(initialAttempt.attemptedPeers);
-  }
-  if (
-    shouldSkipCacheBootstrap(
-      candidates,
-      initialAttempt,
-      candidateKey,
-      options.state,
-    )
-  ) {
-    return emptyConnectBootstrapResult(initialAttempt.attemptedPeers);
-  }
-
-  startCacheBootstrap(options.state, candidateKey);
+  const session = (options.state ??= {});
+  const result = emptyConnectBootstrapResult([]);
+  if (session.active || !hasCapacity(options)) return result;
+  session.active = true;
   try {
-    const retry = await fetchAndRetryBootstrapPeers(knownPeers, options);
-    if (
-      bootstrapSatisfied(
-        retry.retryAttempt.successCount,
-        options.connectedCount(),
-      )
-    ) {
-      clearExhaustedPeerSet(options.state);
-    }
-    return {
-      attemptedPeers: [
-        ...initialAttempt.attemptedPeers,
-        ...retry.retryAttempt.attemptedPeers,
-      ],
-      fetchedFromCaches: true,
-      addedPeers: retry.addedPeers,
-      queriedCaches: retry.queriedCaches,
-      errors: retry.errors,
-    };
+    const candidates = dialCandidates(options.peers, options);
+    const initial = await connectBootstrapPeerSet(candidates, options);
+    result.attemptedPeers.push(...initial.attemptedPeers);
+    if (initial.successCount || !hasCapacity(options)) return result;
+    const retry = await fetchAndRetryBootstrapPeers(
+      new Set(initial.attemptedPeers),
+      options,
+    );
+    result.attemptedPeers.push(...retry.retryAttempt.attemptedPeers);
+    result.addedPeers = retry.addedPeers;
+    result.queriedCaches = retry.queriedCaches;
+    result.errors = retry.errors;
+    result.fetchedFromCaches = retry.queriedCaches.length > 0;
+    return result;
   } finally {
-    finishCacheBootstrap(options.state);
+    session.active = false;
   }
+}
+
+function verifiedResponseCaches(
+  options: BootstrapOptions,
+  cache?: string,
+): string[] {
+  if (!cache || !options.state?.aliveCaches?.includes(cache)) return [];
+  return [cache];
+}
+
+function reportError(
+  error?: string,
+  result?: GWebCacheHttpResponse,
+): string | undefined {
+  if (error) return error;
+  if (result && !result.update?.ok) return describeUpdateError(result);
+  return undefined;
 }

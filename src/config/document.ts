@@ -47,7 +47,7 @@ import {
   SERVE_URI_RES,
   VERIFY_DOWNLOADS,
 } from "../const";
-import { normalizeCacheUrl } from "../discovery/gwebcache/shared";
+import { createCacheState } from "../discovery/gwebcache/state";
 import {
   ensureDir,
   fileExists,
@@ -57,7 +57,13 @@ import {
   unique,
 } from "../shared";
 import type { ConfigDoc, RuntimeConfig } from "../types";
+import {
+  loadCacheConfig,
+  needsCacheMigration,
+  runtimeCacheConfig,
+} from "./caches";
 import type { PersistedConfig, PersistedDoc } from "./types";
+import { writeConfigJson } from "./write";
 
 export { trimPeerState } from ".";
 
@@ -188,10 +194,6 @@ function normalizedAdvertisedHost(value: unknown): string | undefined {
   return normalizeIpv4(typeof value === "string" ? value : undefined);
 }
 
-function runtimeGWebCacheUrls(value: unknown): string[] {
-  return normalizedGWebCacheUrls(value) || [];
-}
-
 function derivedMaxConnections(config: ConnectionLimitConfig): number {
   return config.nodeMode === "ultrapeer"
     ? config.maxUltrapeerConnections + config.maxLeafConnections
@@ -264,7 +266,7 @@ export function runtimeConfigFor(
     advertisedHost: normalizedAdvertisedHost(doc.config.advertisedHost),
     advertisedPort: normalizedPositivePort(doc.config.advertisedPort),
     blockedIps: normalizedBlockedIps(doc.config.blockedIps) || [],
-    gwebCacheUrls: runtimeGWebCacheUrls(doc.config.gwebCacheUrls),
+    gwebCaches: runtimeCacheConfig(doc.config.gwebCaches),
     ultrapeer: doc.config.ultrapeer === true,
     monitorIgnoreEvents,
     nodeMode,
@@ -344,9 +346,7 @@ export function configDocForRuntime(
     blockedIps: config.blockedIps.length
       ? [...config.blockedIps]
       : undefined,
-    gwebCacheUrls: config.gwebCacheUrls.length
-      ? [...config.gwebCacheUrls]
-      : undefined,
+    gwebCaches: structuredClone(config.gwebCaches),
     ultrapeer: config.ultrapeer,
     maxUltrapeerConnections: config.maxUltrapeerConnections,
     maxLeafConnections: config.maxLeafConnections,
@@ -413,10 +413,6 @@ function normalizedBlockedIps(value: unknown): string[] | undefined {
   return normalizedStringArray(value, (entry) => normalizeIpv4(entry));
 }
 
-function normalizedGWebCacheUrls(value: unknown): string[] | undefined {
-  return normalizedStringArray(value, (entry) => normalizeCacheUrl(entry));
-}
-
 function normalizedServentIdHex(value: unknown): string | undefined {
   if (typeof value !== "string" || !/^[0-9a-f]{32}$/i.test(value))
     return undefined;
@@ -430,6 +426,7 @@ export function defaultDoc(configPath: string): ConfigDoc {
   return {
     config: {
       listenHost: DEFAULT_LISTEN_HOST,
+      gwebCaches: createCacheState(),
       listenPort: defaultListenPortForServentId(serventIdHex),
       blockedIps: [],
       ultrapeer: false,
@@ -570,8 +567,6 @@ function applyOptionalLoadedConfig(
   if (advertisedPort) doc.config.advertisedPort = advertisedPort;
   const blockedIps = normalizedBlockedIps(config.blocked_ips);
   if (blockedIps) doc.config.blockedIps = blockedIps;
-  const gwebCacheUrls = normalizedGWebCacheUrls(config.gwebcache_urls);
-  if (gwebCacheUrls) doc.config.gwebCacheUrls = gwebCacheUrls;
   if (typeof config.enable_tls === "boolean")
     doc.config.enableTls = config.enable_tls;
   applyLoadedDownloadConfig(doc, config);
@@ -611,6 +606,7 @@ function buildLoadedDoc(
       peers: normalizePeerState(state.peers),
     },
   };
+  doc.config.gwebCaches = loadCacheConfig(parsed);
   applyOptionalLoadedConfig(doc, config);
   doc.state.peers = filterBlockedPeerState(
     doc.state.peers,
@@ -633,8 +629,10 @@ export async function loadDoc(configPath: string): Promise<ConfigDoc> {
   const full = path.resolve(configPath);
   if (!(await fileExists(full))) return await createDefaultDocOnDisk(full);
   const raw = await fsp.readFile(full, "utf8");
-  const doc = buildLoadedDoc(full, JSON.parse(raw) as PersistedDoc);
+  const parsed = JSON.parse(raw) as PersistedDoc;
+  const doc = buildLoadedDoc(full, parsed);
   await ensureDocRuntimeDirs(full, doc);
+  if (needsCacheMigration(parsed)) await writeDoc(full, doc);
   return doc;
 }
 
@@ -644,9 +642,7 @@ export async function writeDoc(
   doc: ConfigDoc,
 ): Promise<void> {
   const full = path.resolve(configPath);
-  const tmp = `${full}.tmp`;
   const runtime = runtimeConfigFor(full, doc);
   const clean = persistedDocForRuntime(runtime, doc, randomDocServentId());
-  await fsp.writeFile(tmp, `${JSON.stringify(clean, null, 2)}\n`, "utf8");
-  await fsp.rename(tmp, full);
+  await writeConfigJson(full, `${JSON.stringify(clean, null, 2)}\n`);
 }

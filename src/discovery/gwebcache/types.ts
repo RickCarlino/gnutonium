@@ -1,3 +1,5 @@
+import type { CacheState } from "./state";
+
 type GWebCacheMode = "get" | "update";
 
 type FetchLike = (
@@ -24,6 +26,7 @@ export type GWebCacheRequestOptions = {
   getUptime?: boolean;
   timeoutMs?: number;
   signal?: AbortSignal;
+  /** Explicit transport override for tests; bypasses public-address checks. */
   fetchImpl?: FetchLike;
 };
 
@@ -79,7 +82,14 @@ export type GWebCacheHttpResponse = GWebCacheResponse & {
   ok: boolean;
 };
 
-export type BootstrapOptions = {
+export type CacheAccessOptions = {
+  state?: GWebCacheBootstrapState;
+  now?: () => number;
+  random?: () => number;
+  persist?: () => Promise<void>;
+};
+
+export type BootstrapOptions = CacheAccessOptions & {
   caches?: readonly string[];
   client?: string;
   version?: string;
@@ -87,8 +97,8 @@ export type BootstrapOptions = {
   timeoutMs?: number;
   maxPeers?: number;
   maxCaches?: number;
-  queryAll?: boolean;
   signal?: AbortSignal;
+  /** Explicit transport override for tests; bypasses public-address checks. */
   fetchImpl?: FetchLike;
 };
 
@@ -107,15 +117,16 @@ export type BootstrapResult = {
 
 export type GWebCacheBootstrapState = {
   active?: boolean;
-  lastExhaustedPeerSet?: string;
+  nextAnnouncementAt?: number;
   aliveCaches?: string[];
+  registry?: CacheState;
+  requestActive?: boolean;
 };
 
 export type ConnectBootstrapOptions = BootstrapOptions & {
   peers: readonly string[];
   connectTimeoutMs: number;
   connectConcurrency: number;
-  connectedCount: () => number;
   availableSlots: () => number;
   connectPeer: (
     host: string,
@@ -124,6 +135,7 @@ export type ConnectBootstrapOptions = BootstrapOptions & {
   ) => Promise<void>;
   addPeer?: (peer: string) => void;
   isSelfPeer?: (host: string, port: number) => boolean;
+  canDialPeer?: (host: string, port: number) => boolean;
   maxBootstrapPeers?: number;
   maxBootstrapCaches?: number;
   state?: GWebCacheBootstrapState;
@@ -137,7 +149,7 @@ export type ConnectBootstrapResult = {
   errors: BootstrapResult["errors"];
 };
 
-export type ReportSelfOptions = {
+export type ReportSelfOptions = CacheAccessOptions & {
   caches?: readonly string[];
   client?: string;
   version?: string;
@@ -149,6 +161,7 @@ export type ReportSelfOptions = {
   uptimeSec?: number;
   state?: GWebCacheBootstrapState;
   signal?: AbortSignal;
+  /** Explicit transport override for tests; bypasses public-address checks. */
   fetchImpl?: FetchLike;
 };
 
@@ -159,25 +172,19 @@ export type ReportSelfResult = {
   errors: BootstrapResult["errors"];
 };
 
+// Verified with nonempty Gnutella peer queries on 2026-09-27.
 export const KNOWN_CACHES = [
-  "http://bj.ddns.net/beacon/gwc.php",
-  "http://bj.ddns.net/cachechu/",
-  "http://bj.ddns.net/gnucache/gcache.php",
-  "http://bj.ddns.net/gwebcache/gcache.php",
-  "http://bj.ddns.net/perlcache/perlgcache.cgi",
-  "http://bj.ddns.net/phpgnucacheii/gwcii.php",
-  "http://bj.ddns.net/skulls/skulls.php",
   "http://cache.jayl.de/g2/gwc.php/",
-  "http://cache.trillinux.org/g2/bazooka.php",
-  "http://dkac.trillinux.org/dkac/dkac.php/",
-  "http://fascination77.free.fr/cachechu/",
+  "http://gweb.4octets.co.uk/skulls.php",
   "http://gweb3.4octets.co.uk/gwc.php",
-  "http://gweb4.4octets.co.uk/index.php",
+  "http://gweb4.4octets.co.uk/gwc.php",
   "http://midian.jayl.de/g2/bazooka.php",
-  "http://p2p.findclan.net/skulls.php",
+  "http://midian.jayl.de/g2/gwc.php",
+  "http://paper.gwc.dyslexicfish.net:3709/",
+  "http://rock.gwc.dyslexicfish.net:3709/",
+  "http://scissors.gwc.dyslexicfish.net:3709/",
   "http://skulls.gwc.dyslexicfish.net/skulls.php",
-  "http://www.paper.gwc.dyslexicfish.net/",
-  "http://www.rock.gwc.dyslexicfish.net/",
-  "http://www.scissors.gwc.dyslexicfish.net/",
   "https://www.paper.gwc.dyslexicfish.net/",
+  "https://www.rock.gwc.dyslexicfish.net/",
+  "https://www.scissors.gwc.dyslexicfish.net/",
 ] as const;

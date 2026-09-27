@@ -11,6 +11,7 @@ import {
   sanitizeVersion,
   splitBodyLines,
 } from "./shared";
+import { cacheResponseBody, fetchPublicCache } from "./transport";
 import type {
   GWebCacheCacheEntry,
   GWebCacheHostEntry,
@@ -85,12 +86,12 @@ function applyRequestMode(
   url: URL,
   options: GWebCacheRequestOptions,
 ): void {
+  url.searchParams.set("net", normalizeNetwork(options.network));
   if (options.mode === "update") {
     url.searchParams.set("update", "1");
     return;
   }
   url.searchParams.set("get", "1");
-  url.searchParams.set("net", normalizeNetwork(options.network));
 }
 
 function applyRequestMetadata(
@@ -254,7 +255,8 @@ function parseInfoLineIntoState(
   const key = parts[1]?.trim().toLowerCase() || "";
   const values = parts.slice(2).map((value) => value.trim());
   if (key === "pong") return applyPongInfo(state, values);
-  if (key === "update") return applyUpdateInfo(state, values);
+  if (key === "update" && values[0]?.toLowerCase() !== "period")
+    return applyUpdateInfo(state, values);
   if (key === "warning") return applyWarningInfo(state, values);
   if (key) state.info.push({ key, values });
 }
@@ -368,7 +370,7 @@ export async function requestGWebCache(
 ): Promise<GWebCacheHttpResponse> {
   const requestUrl = buildGWebCacheUrl(baseUrl, options);
   const timeoutMs = Math.max(0, options.timeoutMs ?? DEFAULT_TIMEOUT_MS);
-  const fetchImpl = options.fetchImpl || fetch;
+  const fetchImpl = options.fetchImpl || fetchPublicCache;
   const { signal, cleanup } = combineSignals(options.signal, timeoutMs);
 
   try {
@@ -381,7 +383,7 @@ export async function requestGWebCache(
       },
       signal,
     });
-    const body = await response.text();
+    const body = await cacheResponseBody(response);
     return {
       requestUrl,
       body,

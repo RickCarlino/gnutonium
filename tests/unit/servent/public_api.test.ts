@@ -6,6 +6,8 @@ import path from "node:path";
 import { scan } from "../../../src/cli/tokens";
 import { detectLocalAdvertisedIpv4 } from "../../../src/config/document";
 import type { Peer } from "../../../src/connections/types";
+import { createCacheState } from "../../../src/discovery/gwebcache/state";
+import { KNOWN_CACHES } from "../../../src/gwebcache_client";
 import {
   buildGetRequest,
   buildHeader,
@@ -102,8 +104,12 @@ describe("protocol config and public helpers", () => {
       expect(created.config.dataDir).toBe(path.join(dir, "nested"));
       expect(created.config.advertisedHost).toBeUndefined();
       expect(created.config.advertisedPort).toBeUndefined();
-      expect(created.config.gwebCacheUrls).toBeUndefined();
-      expect(createdRuntime.gwebCacheUrls).toEqual([]);
+      expect(Object.keys(created.config.gwebCaches!.entries)).toEqual([
+        ...KNOWN_CACHES,
+      ]);
+      expect(Object.keys(createdRuntime.gwebCaches!.entries)).toEqual([
+        ...KNOWN_CACHES,
+      ]);
       expectReasonableRandomListenPort(createdRuntime.listenPort);
       expect(createdRuntime.maxConnections).toBe(64);
       expect(createdRuntime.maxUltrapeerConnections).toBe(64);
@@ -143,11 +149,15 @@ describe("protocol config and public helpers", () => {
       });
       expect(loaded.config.dataDir).toBe(path.join(dir, "nested"));
       expect(loaded.config.advertisedHost).toBeUndefined();
-      expect(loaded.config.gwebCacheUrls).toBeUndefined();
+      expect(Object.keys(loaded.config.gwebCaches!.entries)).toEqual([
+        ...KNOWN_CACHES,
+      ]);
       expect(loaded.state.serventIdHex).toMatch(/^[0-9a-f]{32}$/);
       expect(persisted.config.listen_ip).toBe("0.0.0.0");
       expect(persisted.config.listen_port).toBe(createdRuntime.listenPort);
-      expect(persisted.config.gwebcache_urls).toEqual([]);
+      expect(Object.keys(persisted.config.gwebcaches as object)).toEqual([
+        ...KNOWN_CACHES,
+      ]);
       expect(persisted.config.max_connections).toBeUndefined();
       expect(persisted.config.max_ultrapeer_connections).toBe(64);
       expect(persisted.config.max_leaf_connections).toBe(64);
@@ -168,12 +178,12 @@ describe("protocol config and public helpers", () => {
     await withTempDir(async (dir) => {
       const configPath = path.join(dir, "protocol.json");
       const doc = defaultDoc(configPath);
-      doc.config.gwebCacheUrls = [
+      doc.config.gwebCaches = createCacheState([
         " http://127.0.0.1:6346/gwc.php ",
         "ftp://ignored.example.net/cache",
         "https://cache.example.net/g2/gwc.php#frag",
         "http://127.0.0.1:6346/gwc.php",
-      ];
+      ]);
 
       await writeDoc(configPath, doc);
       const loaded = await loadDoc(configPath);
@@ -184,15 +194,15 @@ describe("protocol config and public helpers", () => {
         config: Record<string, unknown>;
       };
 
-      expect(loaded.config.gwebCacheUrls).toEqual([
+      expect(Object.keys(loaded.config.gwebCaches!.entries)).toEqual([
         "http://127.0.0.1:6346/gwc.php",
         "https://cache.example.net/g2/gwc.php",
       ]);
-      expect(runtime.gwebCacheUrls).toEqual([
+      expect(Object.keys(runtime.gwebCaches!.entries)).toEqual([
         "http://127.0.0.1:6346/gwc.php",
         "https://cache.example.net/g2/gwc.php",
       ]);
-      expect(persisted.config.gwebcache_urls).toEqual([
+      expect(Object.keys(persisted.config.gwebcaches as object)).toEqual([
         "http://127.0.0.1:6346/gwc.php",
         "https://cache.example.net/g2/gwc.php",
       ]);

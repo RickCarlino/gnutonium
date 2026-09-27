@@ -1,4 +1,5 @@
 import type { NetConnectOpts, Server, Socket } from "node:net";
+import type { CacheState } from "./discovery/gwebcache/state";
 import type {
   ConnectBootstrapOptions,
   ConnectBootstrapResult,
@@ -184,7 +185,7 @@ export type ConfigDoc = {
     advertisedHost?: string;
     advertisedPort?: number;
     blockedIps?: string[];
-    gwebCacheUrls?: string[];
+    gwebCaches?: CacheState;
     ultrapeer: boolean;
     maxConnections?: number;
     maxUltrapeerConnections?: number;
@@ -214,7 +215,7 @@ export type RuntimeConfig = {
   advertisedHost?: string;
   advertisedPort?: number;
   blockedIps: string[];
-  gwebCacheUrls: string[];
+  gwebCaches: CacheState;
   ultrapeer: boolean;
   monitorIgnoreEvents: string[];
   nodeMode: NodeMode;

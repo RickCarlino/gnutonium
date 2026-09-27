@@ -1,10 +1,6 @@
 import net from "node:net";
 import path from "node:path";
-import {
-  configDocForRuntime,
-  trimPeerState,
-  writeDoc,
-} from "./config/document";
+import { trimPeerState, writeDoc } from "./config/document";
 import { RuntimeConfiguration } from "./config/runtime";
 import { PeerConnections } from "./connections/connections";
 import { LocalAddress } from "./discovery/local_address";
@@ -128,6 +124,11 @@ export class GnutellaServent {
     this.discovery = new PeerDiscovery(
       {
         config: () => this.config(),
+        persistCaches: async () => {
+          this.syncCacheConfig();
+          await ensureDir(path.dirname(this.configPath));
+          await writeDoc(this.configPath, this.doc);
+        },
         now: () => this.now(),
         startedAtMs: () => this.startedAtMs,
         scheduler: this.collaborators.scheduler,
@@ -140,6 +141,8 @@ export class GnutellaServent {
         connectedMeshPeerCount: () =>
           this.connections.connectedMeshPeerCount(),
         availableDialSlots: () => this.connections.availableDialSlots(),
+        isPeerBusy: (host, port) =>
+          this.connections.peerDialState(host, port) !== "none",
         connectPeer: (host, port, timeoutMs) =>
           this.connections.connectPeer(host, port, timeoutMs),
         currentAdvertisedHost: () =>
@@ -283,13 +286,19 @@ export class GnutellaServent {
       peers: trimPeerState(this.discovery.snapshot()),
       serventIdHex: this.serventId.toString("hex"),
     };
-    this.doc.config = configDocForRuntime(this.runtimeConfig);
+    this.syncCacheConfig();
     await ensureDir(path.dirname(this.configPath));
     await ensureDir(c.downloadsDir);
     await ensureDir(c.incompleteDownloadsDir);
     await writeDoc(this.configPath, this.doc);
     await this.downloadManager.persist();
     await this.shareLibrary.persistShareIndex();
+  }
+
+  private syncCacheConfig(): void {
+    const gwebCaches = this.discovery.gwebCacheBootstrapState.registry;
+    if (gwebCaches) this.configuration.update({ gwebCaches });
+    this.doc.config = this.configuration.persistedConfig();
   }
 
   /** Return a detached snapshot of runtime settings. */
@@ -299,6 +308,10 @@ export class GnutellaServent {
 
   /** Apply runtime overrides and return updated settings. */
   updateRuntimeConfig(patch: Partial<RuntimeConfig>): RuntimeConfig {
+    if (patch.gwebCaches)
+      this.discovery.gwebCacheBootstrapState.registry = structuredClone(
+        patch.gwebCaches,
+      );
     const result = this.configuration.update(patch);
     this.doc.config = this.configuration.persistedConfig();
     return result;
@@ -442,10 +455,6 @@ export class GnutellaServent {
   /** Return completed transfer history for this process. */
   getDownloads(): DownloadRecord[] {
     return this.downloadManager.getHistory();
-  }
-
-  private get runtimeConfig(): RuntimeConfig {
-    return this.configuration.snapshot();
   }
 
   private emitEvent(event: GnutellaEvent): void {

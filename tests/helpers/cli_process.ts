@@ -2,6 +2,7 @@ import fs from "node:fs/promises";
 import net from "node:net";
 import path from "node:path";
 import { TYPE } from "../../src/const";
+import { createCacheState } from "../../src/discovery/gwebcache/state";
 import { defaultDoc, writeDoc } from "../../src/protocol";
 import { buildHeader, encodeQueryHit } from "../../src/wire/codec";
 import { makeShare } from "./protocol";
@@ -83,7 +84,9 @@ export async function cliConfig(dir: string, cachePort: number) {
   doc.config.listenPort = await freePort();
   doc.config.advertisedHost = "127.0.0.1";
   doc.config.advertisedPort = doc.config.listenPort;
-  doc.config.gwebCacheUrls = [`http://127.0.0.1:${cachePort}/cache`];
+  doc.config.gwebCaches = createCacheState([
+    `http://127.0.0.1:${cachePort}/cache`,
+  ]);
   doc.state.peers = {};
   await writeDoc(configPath, doc);
   return { configPath, doc };

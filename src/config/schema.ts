@@ -1,3 +1,4 @@
+import { readCacheState } from "../discovery/gwebcache/state";
 import type { ConfigDoc, RuntimeConfig } from "../types";
 import { trimPeerState } from "./peer_state";
 import type {
@@ -13,7 +14,7 @@ export function persistedConfigForRuntime(
   const cleanConfig: PersistedConfig = {
     listen_ip: runtime.listenHost,
     listen_port: runtime.listenPort,
-    gwebcache_urls: [...runtime.gwebCacheUrls],
+    gwebcaches: readCacheState(runtime.gwebCaches.entries).entries,
     ultrapeer: runtime.ultrapeer,
     max_ultrapeer_connections: runtime.maxUltrapeerConnections,
     max_leaf_connections: runtime.maxLeafConnections,

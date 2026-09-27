@@ -237,7 +237,14 @@ If you want to change behavior at startup without editing the JSON file first, p
 const node = new GnutellaServent(configPath, doc, {
   runtimeConfig: {
     ultrapeer: true,
-    gwebCacheUrls: ["http://127.0.0.1:6346/gwc.php"],
+    gwebCaches: {
+      entries: {
+        "https://cache.example.com/gwc.php": {
+          status: "candidate",
+          discoveredAt: 0,
+        },
+      },
+    },
   },
 });
 ```

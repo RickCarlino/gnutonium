@@ -9,7 +9,6 @@ import {
 import {
   BOOTSTRAP_CONNECT_CONCURRENCY,
   BOOTSTRAP_CONNECT_TIMEOUT_DIVISOR,
-  GWEBCACHE_REPORT_DELAY_SEC,
   MAX_PEER_AGE_SEC,
 } from "../const";
 import type { GWebCacheBootstrapState } from "../gwebcache_client";
@@ -24,9 +23,11 @@ import type {
   PeerState,
   RuntimeConfig,
 } from "../types";
+import { CacheAnnouncements } from "./gwebcache/announcements";
 
 type DiscoveryPeer = {
   connectedAt: number;
+  outbound?: boolean;
   dialTarget?: string;
   capabilities: { listenIp?: { host: string; port: number } };
 };
@@ -34,7 +35,7 @@ type DiscoveryConfig = Pick<
   RuntimeConfig,
   | "blockedIps"
   | "peerSeenThresholdSec"
-  | "gwebCacheUrls"
+  | "gwebCaches"
   | "vendorCode"
   | "userAgent"
   | "maxLeafConnections"
@@ -56,6 +57,7 @@ type DiscoveryDependencies =
     connectedLeafCount: () => number;
     connectedMeshPeerCount: () => number;
     availableDialSlots: () => number;
+    isPeerBusy: (host: string, port: number) => boolean;
     connectPeer: (
       host: string,
       port: number,
@@ -64,15 +66,16 @@ type DiscoveryDependencies =
     currentAdvertisedHost: () => string;
     currentAdvertisedPort: () => number;
     onError: (error: unknown) => void;
+    persistCaches?: () => Promise<void>;
   };
 
 /** Owns remembered peers and GWebCache bootstrap work. */
 export class PeerDiscovery {
   knownPeers: PeerState;
-  readonly gwebCacheBootstrapState: GWebCacheBootstrapState = {};
-  gwebCacheReportTimer?: NodeJS.Timeout;
-  gwebCacheReportAttempted = false;
-  gwebCacheReported = false;
+  readonly gwebCacheBootstrapState: GWebCacheBootstrapState;
+  private readonly announcements: CacheAnnouncements;
+  private readonly abort = new AbortController();
+  private acceptedInbound = false;
   private stopped = false;
   private connecting = false;
   private readonly failedPeers = new Set<string>();
@@ -83,6 +86,20 @@ export class PeerDiscovery {
     peers: PeerState,
   ) {
     this.knownPeers = { ...peers };
+    this.gwebCacheBootstrapState = {
+      registry: structuredClone(deps.config().gwebCaches),
+    };
+    this.announcements = new CacheAnnouncements({
+      now: deps.now,
+      connected: () => deps.peerCount() > 0,
+      eligible: () =>
+        deps.nodeMode() === "ultrapeer" && this.acceptedInbound,
+      nextAnnouncementAt: () =>
+        this.gwebCacheBootstrapState.nextAnnouncementAt ?? 0,
+      send: () => this.sendCacheAnnouncement(),
+      onError: deps.onError,
+      scheduler: deps.scheduler,
+    });
   }
 
   /** Return a copy of remembered peer timestamps. */
@@ -93,19 +110,8 @@ export class PeerDiscovery {
   /** Stop discovery announcements and cancel their timer. */
   dispose(): void {
     this.stopped = true;
-    this.cancelTimeout(this.gwebCacheReportTimer);
-    this.gwebCacheReportTimer = undefined;
-  }
-
-  private scheduleOnce(
-    delay: number,
-    callback: () => void,
-  ): NodeJS.Timeout {
-    return this.deps.scheduler.setTimeout(callback, delay);
-  }
-
-  private cancelTimeout(timer?: NodeJS.Timeout): void {
-    if (timer) this.deps.scheduler.clearTimeout(timer);
+    this.abort.abort();
+    this.announcements.dispose();
   }
 
   /** Remove blocked endpoints and count the removals. */
@@ -119,7 +125,6 @@ export class PeerDiscovery {
       peerStateTargets(current).length - peerStateTargets(filtered).length;
     if (peerStateEquals(current, filtered)) return 0;
     this.knownPeers = filtered;
-    this.gwebCacheBootstrapState.lastExhaustedPeerSet = undefined;
     return removedKnownPeers;
   }
 
@@ -176,24 +181,12 @@ export class PeerDiscovery {
     ) as PeerState;
     if (peerStateEquals(current, filtered)) return false;
     this.knownPeers = filtered;
-    this.gwebCacheBootstrapState.lastExhaustedPeerSet = undefined;
     return true;
-  }
-
-  /** Check whether all remembered peers are unverified. */
-  shouldBootstrapFreshPeers(): boolean {
-    const peers = filterBlockedPeerState(
-      trimPeerState(this.knownPeers),
-      this.deps.config().blockedIps,
-    );
-    const timestamps = Object.values(peers);
-    return (
-      timestamps.length > 0 && timestamps.every((value) => value === 0)
-    );
   }
 
   /** Remember a peer's dial and advertised endpoints. */
   rememberPeerAddresses(peer: DiscoveryPeer, timestamp = 0): void {
+    if (peer.outbound === false) this.acceptedInbound = true;
     const remembered = new Set<string>();
     const push = (host: string, port: number) => {
       const target = normalizePeer(host, port);
@@ -229,53 +222,22 @@ export class PeerDiscovery {
     this.rememberPeerAddresses(peer, this.peerSeenTimestamp(nowMs));
   }
 
-  /** Schedule an announcement once connected to peers. */
-  scheduleGWebCacheReport(): void {
-    if (this.stopped) return;
-    if (
-      this.gwebCacheReportAttempted ||
-      this.gwebCacheReported ||
-      this.gwebCacheReportTimer ||
-      this.deps.peerCount() === 0
-    )
-      return;
-
-    this.gwebCacheReportTimer = this.scheduleOnce(
-      GWEBCACHE_REPORT_DELAY_SEC * 1000,
-      () => {
-        this.gwebCacheReportTimer = undefined;
-        if (
-          this.stopped ||
-          this.gwebCacheReported ||
-          this.deps.peerCount() === 0
-        )
-          return;
-        this.gwebCacheReportAttempted = true;
-        void this.announceSelfToGWebCaches().catch((e) =>
-          this.deps.onError(e),
-        );
-      },
-    );
-  }
-
-  /** Update announcement scheduling for current connectivity. */
+  /** Update the hourly announcement schedule after a connection change. */
   refreshGWebCacheReport(): void {
-    if (this.deps.peerCount() > 0) {
-      this.scheduleGWebCacheReport();
-      return;
-    }
-    this.cancelTimeout(this.gwebCacheReportTimer);
-    this.gwebCacheReportTimer = undefined;
+    this.announcements.refresh();
   }
 
-  /** Advertise the local routable endpoint and capacity. */
+  /** Attempt an announcement only if session eligibility and timing permit it. */
   async announceSelfToGWebCaches(): Promise<void> {
+    await this.announcements.announce();
+  }
+
+  private async sendCacheAnnouncement(): Promise<void> {
     const host = normalizeIpv4(this.deps.currentAdvertisedHost());
     const port = this.deps.currentAdvertisedPort();
     if (!host || !isRoutableIpv4(host) || !port) return;
 
-    const result = await this.deps.reportSelfToGWebCaches({
-      caches: this.deps.config().gwebCacheUrls,
+    await this.deps.reportSelfToGWebCaches({
       client: this.deps.config().vendorCode,
       version: this.deps.config().userAgent,
       ip: normalizePeer(host, port),
@@ -292,8 +254,10 @@ export class PeerDiscovery {
           ? this.deps.config().maxLeafConnections
           : undefined,
       state: this.gwebCacheBootstrapState,
+      now: this.deps.now,
+      persist: this.deps.persistCaches,
+      signal: this.abort.signal,
     });
-    if (result.reportedCaches.length > 0) this.gwebCacheReported = true;
   }
 
   /** List unblocked remembered endpoints by recency. */
@@ -322,6 +286,7 @@ export class PeerDiscovery {
     port: number,
     timeoutMs: number,
   ): Promise<void> {
+    if (this.stopped) throw new Error("discovery stopped");
     const target = normalizePeer(host, port);
     if (this.failedPeers.has(target))
       throw new Error(`peer ${target} already failed this session`);
@@ -336,28 +301,20 @@ export class PeerDiscovery {
 
   private async connectCandidates(): Promise<void> {
     this.pruneExpiredKnownPeers();
-    const bootstrapFreshPeers = this.shouldBootstrapFreshPeers();
-    if (bootstrapFreshPeers) {
-      this.gwebCacheBootstrapState.lastExhaustedPeerSet = undefined;
-    }
     const c = this.deps.config();
-    const peers = bootstrapFreshPeers ? [] : this.getKnownPeers();
+    const peers = this.getKnownPeers();
     const bootstrapTimeoutMs = Math.max(
       1,
       Math.floor(c.connectTimeoutMs / BOOTSTRAP_CONNECT_TIMEOUT_DIVISOR),
     );
     await this.deps.connectBootstrapPeers({
       peers,
-      caches: c.gwebCacheUrls,
       client: c.vendorCode,
       version: c.userAgent,
       connectTimeoutMs: bootstrapTimeoutMs,
       connectConcurrency: BOOTSTRAP_CONNECT_CONCURRENCY,
-      connectedCount: () =>
-        this.deps.nodeMode() === "ultrapeer"
-          ? this.deps.connectedMeshPeerCount()
-          : this.deps.peerCount(),
-      availableSlots: () => this.deps.availableDialSlots(),
+      availableSlots: () =>
+        this.stopped ? 0 : this.deps.availableDialSlots(),
       connectPeer: (host, port, timeoutMs) =>
         this.connectDiscoveredPeer(host, port, timeoutMs),
       addPeer: (peer) => {
@@ -366,7 +323,14 @@ export class PeerDiscovery {
         this.addKnownPeer(addr.host, addr.port);
       },
       isSelfPeer: (host, port) => this.deps.isSelfPeer(host, port),
+      canDialPeer: (host, port) =>
+        !this.deps.isPeerBusy(host, port) &&
+        !this.failedPeers.has(normalizePeer(host, port)) &&
+        !this.deps.isBlockedHost(host),
       state: this.gwebCacheBootstrapState,
+      now: this.deps.now,
+      persist: this.deps.persistCaches,
+      signal: this.abort.signal,
     });
   }
 }

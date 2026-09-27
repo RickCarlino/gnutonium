@@ -6,6 +6,7 @@ export type PersistedConfig = {
   advertised_host?: unknown;
   advertised_port?: unknown;
   blocked_ips?: unknown;
+  gwebcaches?: unknown;
   gwebcache_urls?: unknown;
   ultrapeer?: unknown;
   max_connections?: unknown;
@@ -28,6 +29,8 @@ export type PersistedConfig = {
 export type PersistedState = {
   servent_id_hex?: unknown;
   peers?: unknown;
+  gwebcaches?: unknown;
+  gwebcache_next_request_at?: unknown;
 };
 
 export type PersistedDoc = {

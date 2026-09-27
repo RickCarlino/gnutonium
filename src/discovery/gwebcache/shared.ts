@@ -10,7 +10,6 @@ import { KNOWN_CACHES, type GWebCacheBootstrapState } from "./types";
 export const DEFAULT_TIMEOUT_MS = 5000;
 export const DEFAULT_MAX_PEERS = 20;
 export const DEFAULT_MAX_CACHES = 20;
-export const DEFAULT_MAX_BOOTSTRAP_PEERS = 4096;
 export const DEFAULT_MAX_BOOTSTRAP_CACHES = 256;
 
 /** Normalize an HTTP cache URL without its fragment. */
@@ -21,6 +20,7 @@ export function normalizeCacheUrl(value: string): string | undefined {
     const url = new URL(trimmed);
     if (url.protocol !== "http:" && url.protocol !== "https:")
       return undefined;
+    if (url.username || url.password) return undefined;
     url.hash = "";
     return url.toString();
   } catch {
@@ -121,7 +121,7 @@ export function parseNetworks(value: string | undefined): string[] {
 export function splitBodyLines(body: string): string[] {
   return body
     .replace(/^\uFEFF/, "")
-    .replace(/\r\n/g, "\n")
+    .replace(/\r\n?/g, "\n")
     .split("\n")
     .map((line) => line.trim())
     .filter(Boolean);
