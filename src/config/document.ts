@@ -624,13 +624,18 @@ async function createDefaultDocOnDisk(
   return doc;
 }
 
-/** Load configuration or create it with required directories. */
-export async function loadDoc(configPath: string): Promise<ConfigDoc> {
+/** Load configuration, optionally without creating, migrating, or writing files. */
+export async function loadDoc(
+  configPath: string,
+  options: { readOnly?: boolean } = {},
+): Promise<ConfigDoc> {
   const full = path.resolve(configPath);
-  if (!(await fileExists(full))) return await createDefaultDocOnDisk(full);
+  if (!options.readOnly && !(await fileExists(full)))
+    return await createDefaultDocOnDisk(full);
   const raw = await fsp.readFile(full, "utf8");
   const parsed = JSON.parse(raw) as PersistedDoc;
   const doc = buildLoadedDoc(full, parsed);
+  if (options.readOnly) return doc;
   await ensureDocRuntimeDirs(full, doc);
   if (needsCacheMigration(parsed)) await writeDoc(full, doc);
   return doc;

@@ -56,6 +56,26 @@ peers
 query jazz piano
 ```
 
+## Status Panel
+
+Open a continuously refreshing download monitor in another terminal:
+
+```bash
+gnutonium status --config=gnutella.json
+```
+
+The panel shows download counts, remaining and completed bytes, transfer rates,
+per-file progress, and library size. Wider terminals also show file sizes and
+estimated time remaining. Active downloads appear first, followed by verification,
+failures, queued and paused jobs, and completed downloads.
+
+Use **↑/↓** or **j/k** to scroll, **Page Up/Page Down** to move a page, and
+**Home/End** to jump to either end. **q** or **Ctrl-C** closes the panel.
+
+The view refreshes every second, reading the configured state files and measuring
+partial-file growth. It does not start a client. Counts and
+completed bytes cover the jobs currently in the download history.
+
 ## Configuration
 
 Gnutonium stores both your settings and a small amount of remembered network state in the same JSON file.

@@ -36,7 +36,7 @@ function formattedSize(bytes: number): FormattedSize {
   };
 }
 
-function formatSize(bytes: number): string {
+export function formatSize(bytes: number): string {
   const size = formattedSize(bytes);
   return `${size.value} ${size.unit}`;
 }
@@ -466,6 +466,7 @@ export function parseCli(
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     if (a === "--config") config = argv[++i] || config;
+    else if (a.startsWith("--config=")) config = a.slice(9);
     else if (a === "--exec") exec.push(argv[++i] || "");
     else if (!a.startsWith("-") && command === "run") command = a;
   }

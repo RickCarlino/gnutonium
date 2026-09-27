@@ -3,6 +3,7 @@ import process from "node:process";
 import readline from "node:readline";
 import { completionContext, readlineCompletion } from "./cli/complete";
 import { CommandRunner, runExecCommands } from "./cli/runner";
+import { watchStatus } from "./cli/status";
 import { monitorAllowsEvent, type MonitorMode } from "./cli_monitor";
 import { displayResultCount, errMsg, parseCli } from "./cli_shared";
 import {
@@ -453,6 +454,11 @@ function startRepl(
 /** Run CLI initialization, scripted commands, or interactive mode. */
 export async function main(argv = process.argv.slice(2)) {
   const cli = parseCli(argv, "gnutella.json");
+  if (cli.command === "status") {
+    if (cli.exec.length) throw new Error("status does not accept --exec");
+    await watchStatus(cli.config);
+    return;
+  }
   if (cli.command === "init") {
     const doc = await loadDoc(cli.config);
     await writeDoc(cli.config, doc);

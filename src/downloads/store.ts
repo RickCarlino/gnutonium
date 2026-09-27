@@ -257,11 +257,21 @@ function normalizeDoc(value: unknown): DownloadStoreDoc {
 /** Load normalized jobs or return an empty store. */
 export async function readDownloadStore(
   filePath: string,
+  options: { strict?: boolean } = {},
 ): Promise<DownloadStoreDoc> {
   if (!(await fileExists(filePath)))
     return { version: 1, nextId: 1, jobs: [] };
   const raw = await fsp.readFile(filePath, "utf8");
-  return normalizeDoc(JSON.parse(raw) as unknown);
+  const parsed: unknown = JSON.parse(raw);
+  const doc = normalizeDoc(parsed);
+  if (options.strict) {
+    const input = asRecord(parsed);
+    if (input?.version !== 1 || !Array.isArray(input.jobs))
+      throw new Error("Invalid download store");
+    if (doc.jobs.length !== input.jobs.length)
+      throw new Error("Invalid download jobs");
+  }
+  return doc;
 }
 
 /** Save normalized download jobs by atomic replacement. */
