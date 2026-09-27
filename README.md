@@ -15,10 +15,11 @@ Features:
 - browse peer's shared files
 - manage downloads (pause/resume/cancel)
 
-It can be used in three ways:
+It can be used as:
 
-- as an interactive CLI or scriptable CLI runner
-- as a library inside another app that requires access to the Gnutella network
+- an interactive CLI
+- a scriptable CLI runner
+- a library inside another app that requires access to the Gnutella network
 
 ## Prebuilt Binaries
 
