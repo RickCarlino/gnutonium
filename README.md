@@ -2,6 +2,8 @@
 
 <img src="logo.png" alt="Gnutonium logo" width="720">
 
+![Gnutonium Status TUI screenshot](./status-screenshot.png)
+
 Gnutonium is a small Bun-based Gnutella client you can run from the terminal or embed in a TypeScript app.
 
 Gnutonium is compatible with major clients like GTK-Gnutella, Phex, Shareaza and others.
