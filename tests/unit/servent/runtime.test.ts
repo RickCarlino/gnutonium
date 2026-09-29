@@ -31,6 +31,7 @@ describe("protocol node", () => {
       await withMockNetworkInterfaces(async () => {
         const configPath = path.join(dir, "protocol.json");
         const doc = defaultDoc(configPath);
+        doc.config.listenHost = "127.0.0.1";
         const events: Array<{
           type: string;
           operation?: string;

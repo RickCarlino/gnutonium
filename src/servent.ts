@@ -10,6 +10,8 @@ import {
   connectBootstrapPeers,
   reportSelfToGWebCaches,
 } from "./gwebcache_client";
+import { discoverGateways } from "./nat/gateway";
+import { NatService } from "./nat/service";
 import { MessageRouter } from "./routing/router";
 import { SearchService } from "./search/service";
 import type { SearchSession } from "./search/types";
@@ -61,6 +63,7 @@ export class GnutellaServent {
   });
   protected readonly downloadManager: DownloadManager;
   protected readonly transfers: TransferService;
+  private readonly nat: NatService;
   private timers: NodeJS.Timeout[] = [];
   private startedAtMs: number;
   private stopped = false;
@@ -83,6 +86,15 @@ export class GnutellaServent {
     );
     this.doc.config = this.configuration.persistedConfig();
     this.collaborators = buildCollaborators(options.collaborators);
+    this.nat = new NatService({
+      discover: this.collaborators.nat.discover,
+      scheduler: this.collaborators.scheduler,
+      address: (endpoint) => {
+        this.localAddress.mappedEndpoint = endpoint;
+      },
+      report: (status) =>
+        this.emitEvent({ type: "NAT_STATUS", at: ts(), ...status }),
+    });
     this.connections = new PeerConnections({
       config: () => this.config(),
       updateConfig: (patch) => this.updateRuntimeConfig(patch),
@@ -229,6 +241,7 @@ export class GnutellaServent {
     await this.refreshShares();
     await this.connections.startServer();
     await this.downloadManager.start();
+    void this.nat.start(c);
     this.scheduleRecurringTask(
       c.rescanSharesSec * 1000,
       () => this.refreshShares(),
@@ -268,6 +281,7 @@ export class GnutellaServent {
     this.stopped = true;
     this.shareLibrary.dispose();
     this.clearTimers();
+    await this.nat.stop();
     await this.downloadManager.stop();
     this.transfers.stop();
     await this.connections.stop();
@@ -514,6 +528,7 @@ export class GnutellaServent {
 
 function defaultCollaborators(): GnutellaServentCollaborators {
   return {
+    nat: { discover: discoverGateways },
     clock: {
       now: () => Date.now(),
     },
@@ -540,6 +555,7 @@ function buildCollaborators(
 ): GnutellaServentCollaborators {
   const defaults = defaultCollaborators();
   return {
+    nat: { ...defaults.nat, ...overrides?.nat },
     clock: { ...defaults.clock, ...overrides?.clock },
     scheduler: { ...defaults.scheduler, ...overrides?.scheduler },
     netFactory: { ...defaults.netFactory, ...overrides?.netFactory },

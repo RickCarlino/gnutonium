@@ -6,6 +6,8 @@ import type {
   ReportSelfOptions,
   ReportSelfResult,
 } from "./discovery/gwebcache/types";
+import type { discoverGateways } from "./nat/gateway";
+import type { NatStatus } from "./nat/service";
 import type { RemoteQrpState as StandaloneRemoteQrpState } from "./routing/qrp";
 
 type EventBase<T extends string> = { type: T; at: string };
@@ -278,6 +280,7 @@ export type NodeStatus = {
 };
 
 export type GnutellaEvent =
+  | (EventBase<"NAT_STATUS"> & NatStatus)
   | (EventBase<"STARTED"> & {
       listenHost: string;
       listenPort: number;
@@ -454,6 +457,7 @@ type NodeBootstrapClient = {
 };
 
 export type GnutellaServentCollaborators = {
+  nat: { discover: typeof discoverGateways };
   clock: NodeClock;
   scheduler: NodeScheduler;
   netFactory: NodeNetFactory;
@@ -461,6 +465,7 @@ export type GnutellaServentCollaborators = {
 };
 
 export type GnutellaServentCollaboratorOverrides = {
+  nat?: Partial<GnutellaServentCollaborators["nat"]>;
   clock?: Partial<NodeClock>;
   scheduler?: Partial<NodeScheduler>;
   netFactory?: Partial<NodeNetFactory>;

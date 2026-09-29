@@ -160,6 +160,11 @@ function formatLifecycleMonitorEvent(
   event: GnutellaEvent,
 ): MonitorLogEntry | undefined {
   switch (event.type) {
+    case "NAT_STATUS":
+      return monitorEntry(
+        `[upnp] ${event.state}: ${event.message}`,
+        "NAT_STATUS",
+      );
     case "STARTED":
       return monitorEntry(
         `[started] listen=${event.listenHost}:${event.listenPort} advertised=${event.advertisedHost}:${event.advertisedPort}`,

@@ -1,6 +1,6 @@
 import { detectLocalAdvertisedIpv4 } from "../config/document";
 import { isUnspecifiedIpv4, normalizeIpv4 } from "../shared";
-import type { RuntimeConfig } from "../types";
+import type { PeerAddr, RuntimeConfig } from "../types";
 import { observedAdvertisedHostCandidate } from "./observed_address";
 
 type AddressConfig = Pick<
@@ -8,8 +8,9 @@ type AddressConfig = Pick<
   "advertisedHost" | "advertisedPort" | "listenHost" | "listenPort"
 >;
 
-/** Tracks configured and peer-observed local endpoints. */
+/** Tracks configured, router-mapped and peer-observed local endpoints. */
 export class LocalAddress {
+  mappedEndpoint?: PeerAddr;
   learnedAdvertisedHost?: string;
   private pendingAdvertisedHost?: string;
   private pendingAdvertisedSubnets = new Set<string>();
@@ -30,13 +31,14 @@ export class LocalAddress {
     const configured = this.config().advertisedPort;
     return Number.isInteger(configured) && (configured || 0) > 0
       ? (configured as number)
-      : this.config().listenPort;
+      : this.mappedEndpoint?.port || this.config().listenPort;
   }
 
-  /** Choose the configured, learned, or local host. */
+  /** Choose the configured, mapped, learned, or local host. */
   currentAdvertisedHost(): string {
     return (
       this.configuredAdvertisedHost() ||
+      this.mappedEndpoint?.host ||
       this.learnedAdvertisedHost ||
       detectLocalAdvertisedIpv4(this.config().listenHost)
     );
@@ -52,6 +54,7 @@ export class LocalAddress {
     };
     push(this.configuredAdvertisedHost());
     push(this.learnedAdvertisedHost);
+    push(this.mappedEndpoint?.host);
     push(this.config().listenHost);
     push(detectLocalAdvertisedIpv4(this.config().listenHost));
     return out;
