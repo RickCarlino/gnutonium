@@ -464,7 +464,7 @@ describe("protocol node", () => {
 
       expect(socket.writes).toHaveLength(1);
       expect(socket.writes[0]?.toString("latin1")).toBe(
-        "GET /get/7/alpha.txt HTTP/1.1\r\nUser-Agent: Gnutonium/2.0.0\r\nHost: 9.8.7.6:4321\r\nConnection: Keep-Alive\r\nRange: bytes=5-\r\n\r\n",
+        "GET /get/7/alpha.txt HTTP/1.1\r\nUser-Agent: Gnutonium/2.1.1\r\nHost: 9.8.7.6:4321\r\nConnection: Keep-Alive\r\nRange: bytes=5-\r\n\r\n",
       );
       expect(captured!).toEqual({
         destPath,

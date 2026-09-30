@@ -354,7 +354,7 @@ describe("protocol node", () => {
         ]);
 
         expect(node.connections.baseHandshakeHeaders()).toMatchObject({
-          "user-agent": "Gnutonium/2.0.0",
+          "user-agent": "Gnutonium/2.1.1",
           "x-ultrapeer": "False",
           "listen-ip": "7.7.7.7:7777",
           "x-max-ttl": "4",

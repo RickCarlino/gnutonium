@@ -179,6 +179,8 @@ async function createMeshNode(
   const events: GnutellaEvent[] = [];
   const node = new GnutellaServent(configPath, loaded, {
     onEvent: (event) => events.push(event),
+    // Keep the local test mesh from bootstrapping public Internet peers.
+    runtimeConfig: { gwebCaches: { entries: {} } },
   });
   overrideRuntimeConfig(node, {
     maxConnections: options.maxConnections ?? 4,
@@ -576,7 +578,7 @@ describe("Integration suite (0.6)", () => {
         `GET /get/${resumeShare!.index}/${resumeShare!.name}/ HTTP/1.0\r\nConnection: close\r\nRange: bytes=7-\r\n\r\n`,
       );
       expect(ranged).toContain("HTTP/1.0 206 Partial Content\r\n");
-      expect(ranged).toContain("Server: Gnutonium/2.0.0\r\n");
+      expect(ranged).toContain("Server: Gnutonium/2.1.1\r\n");
       expect(ranged).toContain("Content-Length: 6\r\n");
       expect(ranged).toContain("Content-Range: bytes 7-12/13\r\n");
       expect(ranged.endsWith("from-b")).toBe(true);
