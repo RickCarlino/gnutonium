@@ -31,6 +31,15 @@ function baseRoleHeaders(
   };
   const ultrapeerNeeded = ultrapeerNeededHeader(policy);
   if (ultrapeerNeeded) headers["x-ultrapeer-needed"] = ultrapeerNeeded;
+  if (policy.nodeMode === "leaf" && policy.enableQrp) {
+    // gtk-gnutella uses these compatibility values because LimeWire applies
+    // ultrapeer capability checks to leaves too (nodes.c: node_init_outgoing).
+    // X-Ultrapeer remains False; these do not enable forwarding in leaf mode.
+    headers["x-ultrapeer-query-routing"] = "0.1";
+    headers["x-dynamic-querying"] = "0.1";
+    headers["x-degree"] = "32";
+    headers["x-max-ttl"] = String(Math.min(policy.maxTtl, 4));
+  }
   if (policy.nodeMode === "ultrapeer") {
     headers["x-ultrapeer-query-routing"] = "0.1";
     headers["x-dynamic-querying"] = "0.1";
@@ -48,7 +57,7 @@ function baseRoleHeaders(
 function baseFeatureHeaders(
   policy: LocalHandshakePolicy,
 ): Record<string, string> {
-  const headers: Record<string, string> = {};
+  const headers: Record<string, string> = { "x-requeries": "False" };
   if (policy.enableQrp)
     headers["x-query-routing"] = policy.queryRoutingVersion || "0.1";
   if (policy.enableCompression) headers["accept-encoding"] = "deflate";

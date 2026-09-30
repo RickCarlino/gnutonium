@@ -85,9 +85,10 @@ describe("handshake policy", () => {
     expect(buildBaseHandshakeHeaders(localPolicy())).toMatchObject({
       "user-agent": "Gnutonium/1.3.0",
       "listen-ip": "7.7.7.7:7777",
-      "x-max-ttl": "7",
+      "x-max-ttl": "4",
       "x-ultrapeer": "False",
       "x-query-routing": "0.2",
+      "x-requeries": "False",
       "accept-encoding": "deflate",
       "pong-caching": "0.1",
       ggep: "0.5",
@@ -134,6 +135,42 @@ describe("handshake policy", () => {
         }),
       )["x-ultrapeer-needed"],
     ).toBeUndefined();
+  });
+
+  test("leaf compatibility headers apply to requests and responses without changing role", () => {
+    const policy = localPolicy({ maxUltrapeerConnections: 2 });
+    for (const headers of [
+      buildBaseHandshakeHeaders(policy),
+      buildServerHandshakeHeaders(policy, {}),
+    ]) {
+      expect(headers).toMatchObject({
+        "user-agent": "Gnutonium/1.3.0",
+        "x-ultrapeer": "False",
+        "x-query-routing": "0.2",
+        "x-requeries": "False",
+        "x-ultrapeer-query-routing": "0.1",
+        "x-dynamic-querying": "0.1",
+        "x-degree": "32",
+        "x-max-ttl": "4",
+      });
+      expect(headers["x-ultrapeer-needed"]).toBeUndefined();
+      expect(headers["x-ext-probes"]).toBeUndefined();
+    }
+    expect(
+      buildBaseHandshakeHeaders(localPolicy({ maxTtl: 2 }))["x-max-ttl"],
+    ).toBe("2");
+    expect(
+      buildBaseHandshakeHeaders(
+        localPolicy({ nodeMode: "ultrapeer", maxTtl: 7 }),
+      )["x-max-ttl"],
+    ).toBe("7");
+    const disabled = buildBaseHandshakeHeaders(
+      localPolicy({ enableQrp: false }),
+    );
+    expect(disabled["x-query-routing"]).toBeUndefined();
+    expect(disabled["x-ultrapeer-query-routing"]).toBeUndefined();
+    expect(disabled["x-dynamic-querying"]).toBeUndefined();
+    expect(disabled["x-degree"]).toBeUndefined();
   });
 
   test("negotiates compression, TLS, and remote IP headers", () => {

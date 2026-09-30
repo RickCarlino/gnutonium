@@ -72,6 +72,7 @@ export const CANONICAL_HEADER_NAMES: Record<string, string> = {
   "x-ultrapeer": "X-Ultrapeer",
   "x-ultrapeer-needed": "X-Ultrapeer-Needed",
   "x-query-routing": "X-Query-Routing",
+  "x-requeries": "X-Requeries",
   "x-ultrapeer-query-routing": "X-Ultrapeer-Query-Routing",
   "x-dynamic-querying": "X-Dynamic-Querying",
   "x-ext-probes": "X-Ext-Probes",
