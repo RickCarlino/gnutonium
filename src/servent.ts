@@ -127,7 +127,7 @@ export class GnutellaServent {
       },
       routing: {
         descriptor: (...args) => this.router.handleDescriptor(...args),
-        ping: (ttl) => this.router.sendPing(ttl),
+        ping: (peer, ttl) => this.router.sendPing(ttl, peer),
         publishQrp: (peer) => this.router.sendQrpTable(peer),
         dropped: (peer) => this.router.dropPeer(peer),
         bye: (...args) => this.router.sendBye(...args),

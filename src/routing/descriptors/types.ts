@@ -24,4 +24,6 @@ export type ResponseRouteDecision =
 export type PongCacheEntry = {
   payload: Buffer;
   at: number;
+  hops: number;
+  sourcePeerKey: string;
 };

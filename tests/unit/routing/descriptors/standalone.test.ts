@@ -8,9 +8,8 @@ import {
   pongReplyTtl,
   queryHitReplyTtl,
   responseRouteDecision,
-  selectCachedPongPayloads,
+  selectCachedPongs,
   shouldMarkDescriptorSeen,
-  shouldRelayPing,
   shouldSuppressDescriptor,
 } from "../../../../src/routing/descriptors";
 
@@ -28,12 +27,9 @@ describe("descriptor routing", () => {
     });
     expect(forwardedDescriptorLifetime(0, 3)).toBeUndefined();
     expect(pongReplyTtl(0)).toBe(1);
-    expect(pongReplyTtl(4)).toBe(4);
+    expect(pongReplyTtl(4)).toBe(5);
     expect(queryHitReplyTtl(4, 7)).toBe(6);
     expect(queryHitReplyTtl(9, 7)).toBe(7);
-    expect(shouldRelayPing(2, 2_000, 500, 1_000)).toBe(true);
-    expect(shouldRelayPing(1, 2_000, 500, 1_000)).toBe(false);
-    expect(shouldRelayPing(2, 1_000, 500, 1_000)).toBe(false);
   });
 
   test("suppresses duplicates and non-response descriptors after Bye", () => {
@@ -94,9 +90,18 @@ describe("descriptor routing", () => {
     const newer = Buffer.from("newer");
     const newest = Buffer.from("newest");
     const entries = new Map([
-      ["oldest", { payload: oldest, at: 1 }],
-      ["newer", { payload: newer, at: 2 }],
-      ["newest", { payload: newest, at: 3 }],
+      [
+        "oldest",
+        { payload: oldest, at: 1, hops: 0, sourcePeerKey: "source" },
+      ],
+      [
+        "newer",
+        { payload: newer, at: 2, hops: 2, sourcePeerKey: "source" },
+      ],
+      [
+        "newest",
+        { payload: newest, at: 3, hops: 5, sourcePeerKey: "source" },
+      ],
     ]);
 
     expect(pongCacheKey(Buffer.from("alpha"))).toMatch(/^[0-9a-f]{40}$/);
@@ -104,10 +109,12 @@ describe("descriptor routing", () => {
       "oldest",
     ]);
     expect(
-      selectCachedPongPayloads(entries.values(), 1, 3).map((payload) =>
-        payload.toString("utf8"),
+      selectCachedPongs(entries.values(), 1, 3, "recipient", 7).map(
+        (entry) => entry.payload.toString("utf8"),
       ),
     ).toEqual(["newest", "newer"]);
-    expect(selectCachedPongPayloads(entries.values(), 3, 3)).toEqual([]);
+    expect(
+      selectCachedPongs(entries.values(), 3, 3, "recipient", 7),
+    ).toEqual([]);
   });
 });

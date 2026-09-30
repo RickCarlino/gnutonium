@@ -16,8 +16,10 @@ import type { parsePush } from "../wire/codec";
 import { encodePush, parseQueryHit } from "../wire/codec";
 import { randomId16, rawHex16 } from "../wire/ids";
 import type { DescriptorHeader } from "../wire/types";
+import type { PongCacheEntry } from "./descriptors/types";
 import * as messages from "./messages";
 import * as origin from "./origin";
+import * as pings from "./pings";
 import { initialRemoteQrpState, QrpTable } from "./qrp";
 import * as qrp from "./qrp_exchange";
 import { QrpPublisher } from "./qrp_publication";
@@ -58,10 +60,10 @@ export class MessageRouter {
   readonly pushRoutes = new Map<string, Route>();
   qrpTable = new QrpTable();
   private readonly qrpPublisher: QrpPublisher;
-  readonly pongCache = new Map<string, { payload: Buffer; at: number }>();
+  readonly pongCache = new Map<string, PongCacheEntry>();
   private readonly peerRouting = new Map<
     string,
-    { qrp: RemoteQrpState; lastPingAt: number }
+    { qrp: RemoteQrpState; lastPingAt: number | undefined }
   >();
 
   /** Attach routing, transport, and local-content dependencies. */
@@ -153,10 +155,13 @@ export class MessageRouter {
   }
 
   /** Get or initialize a peer's QRP and ping state. */
-  peerState(peer: Peer): { qrp: RemoteQrpState; lastPingAt: number } {
+  peerState(peer: Peer): {
+    qrp: RemoteQrpState;
+    lastPingAt: number | undefined;
+  } {
     let state = this.peerRouting.get(peer.key);
     if (!state) {
-      state = { qrp: initialRemoteQrpState(), lastPingAt: 0 };
+      state = { qrp: initialRemoteQrpState(), lastPingAt: undefined };
       this.peerRouting.set(peer.key, state);
     }
     return state;
@@ -302,9 +307,9 @@ export class MessageRouter {
 
   /** Cache a pong and evict entries beyond capacity. */
   cachePongPayload(
-    ...args: OwnerArguments<Parameters<typeof messages.cachePongPayload>>
-  ): ReturnType<typeof messages.cachePongPayload> {
-    return messages.cachePongPayload(this, ...args);
+    ...args: OwnerArguments<Parameters<typeof pings.cachePongPayload>>
+  ): ReturnType<typeof pings.cachePongPayload> {
+    return pings.cachePongPayload(this, ...args);
   }
 
   /** Check duplicate and closing-peer suppression rules. */
@@ -327,9 +332,9 @@ export class MessageRouter {
 
   /** Remember the return route, answer, and possibly relay a ping. */
   onPingDescriptor(
-    ...args: OwnerArguments<Parameters<typeof messages.onPingDescriptor>>
-  ): ReturnType<typeof messages.onPingDescriptor> {
-    return messages.onPingDescriptor(this, ...args);
+    ...args: OwnerArguments<Parameters<typeof pings.onPingDescriptor>>
+  ): ReturnType<typeof pings.onPingDescriptor> {
+    return pings.onPingDescriptor(this, ...args);
   }
 
   /** Answer a query locally and relay it when allowed. */
@@ -355,9 +360,9 @@ export class MessageRouter {
 
   /** Reply with local statistics and eligible cached pongs. */
   respondPong(
-    ...args: OwnerArguments<Parameters<typeof messages.respondPong>>
-  ): ReturnType<typeof messages.respondPong> {
-    return messages.respondPong(this, ...args);
+    ...args: OwnerArguments<Parameters<typeof pings.respondPong>>
+  ): ReturnType<typeof pings.respondPong> {
+    return pings.respondPong(this, ...args);
   }
 
   /** Send bounded batches of matching local shares. */
@@ -369,9 +374,9 @@ export class MessageRouter {
 
   /** Cache a discovered endpoint and deliver or forward its pong. */
   onPong(
-    ...args: OwnerArguments<Parameters<typeof messages.onPong>>
-  ): ReturnType<typeof messages.onPong> {
-    return messages.onPong(this, ...args);
+    ...args: OwnerArguments<Parameters<typeof pings.onPong>>
+  ): ReturnType<typeof pings.onPong> {
+    return pings.onPong(this, ...args);
   }
 
   /** Remember the push route and deliver or forward hits. */
@@ -434,8 +439,8 @@ export class MessageRouter {
 
   /** Send pings to eligible peers, optionally excluding one. */
   broadcastPingToPeers(
-    ...args: OwnerArguments<Parameters<typeof query.broadcastPingToPeers>>
-  ): ReturnType<typeof query.broadcastPingToPeers> {
-    return query.broadcastPingToPeers(this, ...args);
+    ...args: OwnerArguments<Parameters<typeof pings.broadcastPingToPeers>>
+  ): ReturnType<typeof pings.broadcastPingToPeers> {
+    return pings.broadcastPingToPeers(this, ...args);
   }
 }

@@ -66,7 +66,7 @@ export function attachPeer(
     at: ts(),
     peer: connections.peerInfo(peer),
   });
-  session.schedule(300, () => connections.deps.routing.ping(1));
+  session.schedule(300, () => connections.deps.routing.ping(peer, 1));
   if (
     connections.config().enableQrp &&
     (capabilities.queryRoutingVersion ||

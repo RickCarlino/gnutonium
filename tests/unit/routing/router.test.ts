@@ -82,7 +82,7 @@ test("router releases per-peer QRP state on departure and all routes on disposal
   router.peerState(peer).lastPingAt = 99;
   router.peerState(peer).qrp.resetSeen = true;
   router.dropPeer(peer);
-  expect(router.peerState(peer).lastPingAt).toBe(0);
+  expect(router.peerState(peer).lastPingAt).toBeUndefined();
   expect(router.peerState(peer).qrp.resetSeen).toBe(false);
   router.queryRoutes.set("local", LOCAL_ROUTE);
   router.markSeen(TYPE.QUERY, "local");

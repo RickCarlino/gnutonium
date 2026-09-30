@@ -292,6 +292,39 @@ async function withFakeMesh<T>(
 }
 
 describe("Integration suite (0.6)", () => {
+  test("startup probes stay per connection and keepalives return one local pong", async () => {
+    await withMesh(async ({ nodes: { A, B, C } }) => {
+      for (const current of [A, B, C]) {
+        const pings = eventsOfType(current, "PEER_MESSAGE_SENT").filter(
+          (event) => event.payloadType === TYPE.PING,
+        );
+        expect(pings).toHaveLength(current.node.connections.peerCount());
+        expect(new Set(pings.map((event) => event.peer.key)).size).toBe(
+          pings.length,
+        );
+      }
+      expect(B.node.router.pongCache.size).toBeGreaterThanOrEqual(2);
+      const receivedBefore = eventsOfType(A, "PONG").length;
+      A.node.sendPing(1);
+      const guid = eventsOfType(A, "PING_SENT").at(-1)!.descriptorIdHex;
+      await waitFor(
+        () => eventsOfType(A, "PONG").length > receivedBefore,
+        "a keepalive reply",
+      );
+      await sleep(50);
+      const replies = eventsOfType(B, "PEER_MESSAGE_SENT").filter(
+        (event) =>
+          event.payloadType === TYPE.PONG &&
+          event.descriptorIdHex === guid,
+      );
+      expect(replies).toHaveLength(1);
+      expect(replies[0]).toMatchObject({ ttl: 1, hops: 0 });
+      expect(eventsOfType(A, "PONG").slice(receivedBefore)).toMatchObject([
+        { ip: "127.0.0.1", port: B.advertisedPort },
+      ]);
+    });
+  });
+
   test("keeps parallel queries and browse results separate across the mesh", async () => {
     await withFakeMesh(async ({ nodes: { A, B, C } }) => {
       await writeShare(B, "parallel-alpha.txt", "alpha");

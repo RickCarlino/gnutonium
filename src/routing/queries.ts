@@ -107,29 +107,3 @@ export function routeQueryToPeers(
     );
   }
 }
-
-/** Send pings to eligible peers, optionally excluding one. */
-export function broadcastPingToPeers(
-  router: MessageRouter,
-  descriptorId: Buffer,
-  ttl: number,
-  hops: number,
-  payload: Buffer,
-  exceptPeerKey?: string,
-): void {
-  const skipLeaves = router.deps.transport.nodeMode() === "ultrapeer";
-  const peers = [...router.deps.transport.peers.values()];
-  for (const peer of peers) {
-    const skipPeer = exceptPeerKey != null && peer.key === exceptPeerKey;
-    const skipLeaf = skipLeaves && router.deps.transport.isLeafPeer(peer);
-    if (skipPeer || skipLeaf) continue;
-    router.deps.transport.sendToPeer(
-      peer,
-      TYPE.PING,
-      descriptorId,
-      ttl,
-      hops,
-      payload,
-    );
-  }
-}

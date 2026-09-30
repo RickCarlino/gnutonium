@@ -290,10 +290,14 @@ describe("protocol node", () => {
       ]);
       node.router.pongCache.set("stale-pong", {
         payload: Buffer.from("stale", "utf8"),
+        hops: 0,
+        sourcePeerKey: "p1",
         at: now - 2_000,
       });
       node.router.pongCache.set("fresh-pong", {
         payload: Buffer.from("fresh", "utf8"),
+        hops: 0,
+        sourcePeerKey: "p1",
         at: now,
       });
 

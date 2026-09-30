@@ -1,7 +1,7 @@
 export {
   overflowPongCacheKeys,
   pongCacheKey,
-  selectCachedPongPayloads,
+  selectCachedPongs,
 } from "./pong_cache";
 export { responseRouteDecision } from "./response_routes";
 export {
@@ -13,5 +13,4 @@ export {
   normalizeQueryLifetime,
   pongReplyTtl,
   queryHitReplyTtl,
-  shouldRelayPing,
 } from "./ttl";

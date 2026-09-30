@@ -20,15 +20,20 @@ export function overflowPongCacheKeys(
 }
 
 /** Choose recent pongs within the remaining reply budget. */
-export function selectCachedPongPayloads(
+export function selectCachedPongs(
   entries: Iterable<PongCacheEntry>,
   alreadySent: number,
   maxSent: number,
-): Buffer[] {
+  exceptPeerKey: string,
+  maxHops: number,
+): PongCacheEntry[] {
   const available = Math.max(0, maxSent - alreadySent);
   if (available === 0) return [];
   return [...entries]
+    .filter(
+      (entry) =>
+        entry.sourcePeerKey !== exceptPeerKey && entry.hops < maxHops,
+    )
     .sort((a, b) => b.at - a.at)
-    .slice(0, available)
-    .map((entry) => entry.payload);
+    .slice(0, available);
 }

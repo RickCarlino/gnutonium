@@ -1,3 +1,4 @@
+import type { PeerConnection as Peer } from "../connections/types";
 import { LOCAL_ROUTE, TYPE } from "../const";
 import { splitQuerySearch } from "../search/query";
 import { ts } from "../shared";
@@ -6,15 +7,23 @@ import { parseMagnetUri } from "../wire/magnet";
 import type { MessageRouter } from "./router";
 
 /** Originate a ping and remember its local return route. */
-export function sendPing(router: MessageRouter, ttl: number): void {
+export function sendPing(
+  router: MessageRouter,
+  ttl: number,
+  target?: Peer,
+): void {
   if (!router.deps.transport.peers.size) return;
+  if (target && router.deps.transport.peers.get(target.key) !== target)
+    return;
   const descriptorId = router.randomId16();
   const hex = descriptorId.toString("hex");
   router.markSeen(TYPE.PING, hex);
   router.pingRoutes.set(hex, LOCAL_ROUTE);
   const pingTtl = Math.max(0, Math.min(ttl, router.config().maxTtl));
-  for (const peer of router.deps.transport.peers.values()) {
+  const peers = target ? [target] : router.deps.transport.peers.values();
+  for (const peer of peers) {
     if (
+      !target &&
       router.deps.transport.nodeMode() === "ultrapeer" &&
       router.deps.transport.isLeafPeer(peer)
     )

@@ -5,10 +5,8 @@ import { ts } from "../shared";
 import type { QueryDescriptor, Route } from "../types";
 import {
   encodeBye,
-  encodePong,
   encodeQueryHit,
   parseBye,
-  parsePong,
   parsePush,
   parseQuery,
   parseQueryHit,
@@ -17,19 +15,14 @@ import type { DescriptorHeader } from "../wire/types";
 import {
   forwardedDescriptorLifetime,
   normalizeQueryLifetime as normalizeQueryLifetimePolicy,
-  overflowPongCacheKeys,
-  pongCacheKey,
-  pongReplyTtl,
   queryHitReplyTtl,
   responseRouteDecision,
-  selectCachedPongPayloads,
   shouldMarkDescriptorSeen,
-  shouldRelayPing,
   shouldSuppressDescriptor,
 } from "./descriptors";
 import type { DescriptorLifetime } from "./descriptors/types";
 import { splitSearchTerms } from "./qrp";
-import { broadcastPingToPeers, routeQueryToPeers } from "./queries";
+import { routeQueryToPeers } from "./queries";
 import type { MessageRouter } from "./router";
 
 type RoutedDescriptor = Pick<
@@ -192,75 +185,6 @@ export async function onPush(
   );
 }
 
-/** Remember the return route, answer, and possibly relay a ping. */
-export function onPingDescriptor(
-  router: MessageRouter,
-  peer: Peer,
-  hdr: RoutedDescriptor,
-  payload: Buffer,
-): void {
-  router.pingRoutes.set(hdr.descriptorIdHex, {
-    peerKey: peer.key,
-    ts: router.now(),
-  });
-  router.respondPong(peer, hdr);
-  if (!router.deps.transport.shouldRelayPings()) return;
-  if (
-    !shouldRelayPing(
-      hdr.ttl,
-      router.now(),
-      router.peerState(peer).lastPingAt,
-      1000,
-    )
-  )
-    return;
-  router.peerState(peer).lastPingAt = router.now();
-  broadcastPingToPeers(
-    router,
-    hdr.descriptorId,
-    hdr.ttl - 1,
-    hdr.hops + 1,
-    payload,
-    peer.key,
-  );
-}
-
-/** Cache a discovered endpoint and deliver or forward its pong. */
-export function onPong(
-  router: MessageRouter,
-  _peer: Peer,
-  hdr: RoutedDescriptor,
-  payload: Buffer,
-): void {
-  const pong = parsePong(payload);
-  router.cachePongPayload(payload);
-  router.deps.discoveredPeer(pong.ip, pong.port);
-  const decision = responseRouteDecision(
-    router.pingRoutes.get(hdr.descriptorIdHex),
-    { forwardInLeaf: true },
-  );
-  if (decision.kind === "drop") return;
-  if (decision.kind === "local") {
-    router.deps.emit({
-      type: "PONG",
-      at: ts(),
-      ip: pong.ip,
-      port: pong.port,
-      files: pong.files,
-      kbytes: pong.kbytes,
-    });
-    return;
-  }
-  router.forwardToRoute(
-    decision.route,
-    TYPE.PONG,
-    hdr.descriptorId,
-    hdr.ttl,
-    hdr.hops,
-    payload,
-  );
-}
-
 /** Consume a disconnect notice and end the peer socket. */
 export function onBye(
   _router: MessageRouter,
@@ -374,24 +298,6 @@ export function shouldIgnoreQuery(
   return words.every((word) => word.length <= 1);
 }
 
-/** Cache a pong and evict entries beyond capacity. */
-export function cachePongPayload(
-  router: MessageRouter,
-  payload: Buffer,
-): void {
-  const digest = pongCacheKey(payload);
-  router.pongCache.set(digest, {
-    payload: Buffer.from(payload),
-    at: router.now(),
-  });
-  for (const key of overflowPongCacheKeys(
-    router.pongCache.entries(),
-    64,
-  )) {
-    router.pongCache.delete(key);
-  }
-}
-
 /** Check duplicate and closing-peer suppression rules. */
 export function shouldIgnoreDescriptor(
   router: MessageRouter,
@@ -444,46 +350,6 @@ export function sendBye(
     0,
     encodeBye(code, message),
   );
-}
-
-/** Reply with local statistics and eligible cached pongs. */
-export function respondPong(
-  router: MessageRouter,
-  peer: Peer,
-  hdr: Pick<DescriptorHeader, "descriptorId" | "hops">,
-): void {
-  const ttl = pongReplyTtl(hdr.hops);
-  const own = encodePong(
-    router.deps.address.currentAdvertisedPort(),
-    router.deps.address.currentAdvertisedHost(),
-    router.deps.shares.list().length,
-    router.deps.shares.totalSharedKBytes(),
-  );
-  router.deps.transport.sendToPeer(
-    peer,
-    TYPE.PONG,
-    hdr.descriptorId,
-    ttl,
-    0,
-    own,
-  );
-  if (!router.config().enablePongCaching) return;
-  let sent = 1;
-  for (const payload of selectCachedPongPayloads(
-    router.pongCache.values(),
-    sent,
-    10,
-  )) {
-    router.deps.transport.sendToPeer(
-      peer,
-      TYPE.PONG,
-      hdr.descriptorId,
-      ttl,
-      0,
-      payload,
-    );
-    sent++;
-  }
 }
 
 /** Send bounded batches of matching local shares. */

@@ -23,20 +23,10 @@ export function forwardedDescriptorLifetime(
 
 /** Choose enough TTL for a pong's return path. */
 export function pongReplyTtl(hops: number): number {
-  return Math.max(1, hops);
+  return Math.min(255, Math.max(1, hops + 1));
 }
 
 /** Bound the return TTL for query results. */
 export function queryHitReplyTtl(hops: number, maxTtl: number): number {
   return Math.min(maxTtl, Math.max(1, hops + 2));
-}
-
-/** Check remaining TTL and the ping relay interval. */
-export function shouldRelayPing(
-  ttl: number,
-  now: number,
-  lastPingAt: number,
-  minIntervalMs: number,
-): boolean {
-  return ttl > 1 && now - lastPingAt >= minIntervalMs;
 }

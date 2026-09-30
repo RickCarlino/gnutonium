@@ -51,7 +51,7 @@ type ConnectionDependencies = {
       header: DescriptorHeader,
       payload: Buffer,
     ) => void;
-    ping: (ttl: number) => void;
+    ping: (peer: Peer, ttl: number) => void;
     publishQrp: (peer: Peer) => Promise<void>;
     dropped: (peer: Peer) => void;
     bye: (peer: Peer, code: number, reason: string) => void;
