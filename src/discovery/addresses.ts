@@ -38,13 +38,18 @@ function ipv4Octets(host: string): number[] | null {
 
 type Ipv4Matcher = (parts: readonly number[]) => boolean;
 
-const NON_ROUTABLE_IPV4_MATCHERS: Ipv4Matcher[] = [
-  ([a]) => a === 0 || a >= 224,
-  ([a]) => a === 10 || a === 127,
-  ([a, b]) => a === 100 && b >= 64 && b <= 127,
-  ([a, b]) => a === 169 && b === 254,
+const PRIVATE_IPV4_MATCHERS: Ipv4Matcher[] = [
+  ([a]) => a === 10,
   ([a, b]) => a === 172 && b >= 16 && b <= 31,
   ([a, b]) => a === 192 && b === 168,
+];
+
+const NON_ROUTABLE_IPV4_MATCHERS: Ipv4Matcher[] = [
+  ...PRIVATE_IPV4_MATCHERS,
+  ([a]) => a === 0 || a >= 224,
+  ([a]) => a === 127,
+  ([a, b]) => a === 100 && b >= 64 && b <= 127,
+  ([a, b]) => a === 169 && b === 254,
   ([a, b, c]) => a === 192 && b === 0 && c === 0,
   ([a, b, c]) => a === 192 && b === 0 && c === 2,
   ([a, b]) => a === 198 && (b === 18 || b === 19),
@@ -63,6 +68,27 @@ export function isRoutableIpv4(host: string): boolean {
   return (
     !!parts && !NON_ROUTABLE_IPV4_MATCHERS.some((match) => match(parts))
   );
+}
+
+function localIpv4Scope(host: string): "private" | "loopback" | undefined {
+  const parts = ipv4Octets(host);
+  if (!parts) return undefined;
+  if (parts[0] === 127) return "loopback";
+  if (PRIVATE_IPV4_MATCHERS.some((match) => match(parts)))
+    return "private";
+  return undefined;
+}
+
+/** Admit public referrals, or local referrals from a local socket address. */
+export function isAllowedPeerReferral(
+  host: string,
+  reporterHost?: string,
+): boolean {
+  if (isRoutableIpv4(host)) return true;
+  const target = localIpv4Scope(host);
+  const source = localIpv4Scope(reporterHost || "");
+  if (source === "loopback") return target !== undefined;
+  return source === "private" && target === "private";
 }
 
 /** Return the first two IPv4 octets as a subnet key. */

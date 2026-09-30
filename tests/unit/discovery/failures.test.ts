@@ -117,6 +117,7 @@ test("a stable connection restores a timed-out endpoint", async () => {
   });
   await node.connectKnownPeers();
   node.markPeerSeenIfStable({
+    socket: {},
     connectedAt: now * 1000 - 61_000,
     dialTarget: target,
     capabilities: {},

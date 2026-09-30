@@ -23,9 +23,11 @@ import type {
   PeerState,
   RuntimeConfig,
 } from "../types";
+import { isAllowedPeerReferral } from "./addresses";
 import { CacheAnnouncements } from "./gwebcache/announcements";
 
 type DiscoveryPeer = {
+  socket: { remoteAddress?: string };
   connectedAt: number;
   outbound?: boolean;
   dialTarget?: string;
@@ -201,7 +203,13 @@ export class PeerDiscovery {
       const addr = parsePeer(peer.dialTarget);
       if (addr) push(addr.host, addr.port);
     }
-    if (peer.capabilities.listenIp) {
+    if (
+      peer.capabilities.listenIp &&
+      isAllowedPeerReferral(
+        peer.capabilities.listenIp.host,
+        peer.socket.remoteAddress,
+      )
+    ) {
       push(
         peer.capabilities.listenIp.host,
         peer.capabilities.listenIp.port,

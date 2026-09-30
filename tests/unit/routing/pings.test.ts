@@ -198,3 +198,22 @@ test("distinct unsolicited zero-GUID pongs still populate discovery without bein
   expect(messages(source)).toHaveLength(0);
   expect(messages(other)).toHaveLength(0);
 });
+
+test("public peers cannot discover, cache, or relay private or unusable pong endpoints", () => {
+  const { node, source, other, receive } = fixture();
+  (other.socket as unknown as MockSocket).remoteAddress = "::ffff:8.8.8.8";
+  other.capabilities.listenIp = { host: "127.0.0.1", port: 6346 };
+  const guid = receive(source, TYPE.PING, 2, 0);
+  for (const host of ["192.168.1.1", "127.0.0.2", "0.0.0.0"]) {
+    receive(other, TYPE.PONG, 2, 0, encodePong(6567, host, 0, 0), guid);
+  }
+  receive(other, TYPE.PONG, 2, 0, encodePong(0, "8.8.4.4", 0, 0), guid);
+  expect(node.getKnownPeers()).toEqual([]);
+  expect(node.router.pongCache.size).toBe(0);
+  expect(messages(source)).toHaveLength(1);
+
+  receive(other, TYPE.PONG, 2, 0, encodePong(6346, "8.8.4.4", 0, 0), guid);
+  expect(node.getKnownPeers()).toEqual(["8.8.4.4:6346"]);
+  expect(node.router.pongCache.size).toBe(1);
+  expect(messages(source)).toHaveLength(2);
+});

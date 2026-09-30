@@ -1,5 +1,6 @@
 import type { PeerConnection as Peer } from "../connections/types";
 import { TYPE } from "../const";
+import { isAllowedPeerReferral } from "../discovery/addresses";
 import { ts } from "../shared";
 import { encodePong, parsePong } from "../wire/codec";
 import type { DescriptorHeader } from "../wire/types";
@@ -69,6 +70,11 @@ export function onPong(
   payload: Buffer,
 ): void {
   const pong = parsePong(payload);
+  if (
+    !pong.port ||
+    !isAllowedPeerReferral(pong.ip, peer.socket.remoteAddress)
+  )
+    return;
   router.cachePongPayload(peer, hdr.hops, payload);
   router.deps.discoveredPeer(pong.ip, pong.port);
   const decision = responseRouteDecision(

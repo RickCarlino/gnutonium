@@ -1,5 +1,6 @@
 import net from "node:net";
 import { MAX_XTRY } from "../const";
+import { isAllowedPeerReferral } from "../discovery/addresses";
 import {
   errMsg,
   normalizeIpv4,
@@ -725,11 +726,13 @@ export function selectTryPeers(
 export function maybeAbsorbTryHeaders(
   connections: PeerConnections,
   headers: Record<string, string>,
+  reporterHost?: string,
 ): void {
   for (const addr of [
     ...parsePeerHeaderList(headers["x-try"]),
     ...parsePeerHeaderList(headers["x-try-ultrapeers"]),
   ]) {
+    if (!isAllowedPeerReferral(addr.host, reporterHost)) continue;
     connections.deps.discovery.addKnownPeer(addr.host, addr.port);
   }
 }

@@ -171,7 +171,7 @@ export function absorbHandshakeHeaders(
   headers: Record<string, string>,
   reporterHost?: string,
 ): void {
-  connections.maybeAbsorbTryHeaders(headers);
+  connections.maybeAbsorbTryHeaders(headers, reporterHost);
   connections.deps.address.maybeObserveAdvertisedHost(
     headers,
     reporterHost,
