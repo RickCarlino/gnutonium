@@ -1,5 +1,4 @@
 import type { PeerConnection as Peer } from "../connections/types";
-import { TYPE } from "../const";
 import { errMsg } from "../shared";
 import { parseRouteTableUpdate } from "../wire/codec";
 import {
@@ -8,10 +7,7 @@ import {
   validateRemoteQrpPatchSequence,
   validateRemoteQrpReset,
 } from "./qrp";
-import {
-  publishedQrpTableForPeer,
-  sendPublishedQrpToMeshPeers,
-} from "./queries";
+import { sendPublishedQrpToMeshPeers } from "./queries";
 import type { MessageRouter } from "./router";
 
 function rejectQrpUpdate(
@@ -70,36 +66,4 @@ export function onRouteTableUpdate(
   }
   if (router.peerState(peer).qrp.table && peer.role === "leaf")
     sendPublishedQrpToMeshPeers(router);
-}
-
-/** Send a QRP reset followed by compressed patch chunks. */
-export async function sendQrpTable(
-  router: MessageRouter,
-  peer: Peer,
-): Promise<void> {
-  const published = publishedQrpTableForPeer(router, peer);
-  if (!published) return;
-  router.deps.transport.sendToPeer(
-    peer,
-    TYPE.ROUTE_TABLE_UPDATE,
-    router.randomId16(),
-    1,
-    0,
-    published.encodeReset(),
-  );
-  // GTK 1.3.1 misindexes received 1-bit patches; 4-bit patches interoperate.
-  for (const patch of published.encodePatchChunks(
-    Math.min(router.config().maxPayloadBytes, 60 * 1024),
-    4,
-  )) {
-    router.deps.transport.sendToPeer(
-      peer,
-      TYPE.ROUTE_TABLE_UPDATE,
-      router.randomId16(),
-      1,
-      0,
-      patch,
-    );
-    await router.sleep(5);
-  }
 }

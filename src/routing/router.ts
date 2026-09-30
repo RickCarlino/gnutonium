@@ -20,6 +20,7 @@ import * as messages from "./messages";
 import * as origin from "./origin";
 import { initialRemoteQrpState, QrpTable } from "./qrp";
 import * as qrp from "./qrp_exchange";
+import { QrpPublisher } from "./qrp_publication";
 import * as query from "./queries";
 import * as state from "./state";
 
@@ -56,6 +57,7 @@ export class MessageRouter {
   readonly queryRoutes = new Map<string, Route | typeof LOCAL_ROUTE>();
   readonly pushRoutes = new Map<string, Route>();
   qrpTable = new QrpTable();
+  private readonly qrpPublisher: QrpPublisher;
   readonly pongCache = new Map<string, { payload: Buffer; at: number }>();
   private readonly peerRouting = new Map<
     string,
@@ -63,7 +65,22 @@ export class MessageRouter {
   >();
 
   /** Attach routing, transport, and local-content dependencies. */
-  constructor(readonly deps: RouterDependencies) {}
+  constructor(readonly deps: RouterDependencies) {
+    this.qrpPublisher = new QrpPublisher({
+      tableForPeer: (peer) => this.publishedQrpTableForPeer(peer),
+      maxPayloadBytes: () => this.config().maxPayloadBytes,
+      sleep: (ms) => this.sleep(ms),
+      send: (peer, payload) =>
+        deps.transport.sendToPeer(
+          peer,
+          TYPE.ROUTE_TABLE_UPDATE,
+          this.randomId16(),
+          1,
+          0,
+          payload,
+        ),
+    });
+  }
 
   /** Apply routing guards before dispatching a descriptor. */
   handleDescriptor(
@@ -147,6 +164,7 @@ export class MessageRouter {
 
   /** Discard peer routing state and refresh aggregate QRP. */
   dropPeer(peer: Peer): void {
+    this.qrpPublisher.drop(peer);
     const hadLeafQrp =
       peer.role === "leaf" && !!this.peerRouting.get(peer.key)?.qrp.table;
     this.peerRouting.delete(peer.key);
@@ -167,6 +185,7 @@ export class MessageRouter {
 
   /** Clear peer routing state and all routing caches. */
   dispose(): void {
+    this.qrpPublisher.dispose();
     this.peerRouting.clear();
     this.seen.clear();
     this.pingRoutes.clear();
@@ -383,11 +402,9 @@ export class MessageRouter {
     return qrp.onRouteTableUpdate(this, ...args);
   }
 
-  /** Send a QRP reset followed by compressed patch chunks. */
-  sendQrpTable(
-    ...args: OwnerArguments<Parameters<typeof qrp.sendQrpTable>>
-  ): ReturnType<typeof qrp.sendQrpTable> {
-    return qrp.sendQrpTable(this, ...args);
+  /** Advertise QRP once per connection and whenever the table changes. */
+  sendQrpTable(peer: Peer): Promise<void> {
+    return this.qrpPublisher.send(peer);
   }
 
   /** Refresh QRP advertisements to eligible mesh peers. */

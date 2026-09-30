@@ -3,7 +3,9 @@ import fs from "node:fs/promises";
 import net from "node:net";
 import os from "node:os";
 import path from "node:path";
+import { TYPE } from "../../src/const";
 import { defaultDoc, loadDoc, writeDoc } from "../../src/protocol";
+import { QrpTable } from "../../src/routing/qrp";
 import { sleep } from "../../src/shared";
 import type { GnutellaEvent, RuntimeConfig } from "../../src/types";
 import { withFakeNet } from "../helpers/fake_net";
@@ -696,9 +698,7 @@ describe("Integration suite (0.6)", () => {
           advertisedPort: leafAPort,
           advertisedSpeedKBps: 128,
           peers: [`127.0.0.1:${ultraPort}`],
-          shares: {
-            "leaf-a-only.txt": "alpha",
-          },
+          shares: {},
           ultrapeer: false,
           enableQrp: true,
         });
@@ -742,6 +742,64 @@ describe("Integration suite (0.6)", () => {
           );
 
           await sleep(1200);
+
+          const leafConnection = [
+            ...leafA.node.connections.peers.values(),
+          ][0]!;
+          const remoteLeaf = [
+            ...ultra.node.connections.peers.values(),
+          ].find(
+            (peer) =>
+              peer.role === "leaf" &&
+              peer.socket.remotePort === leafConnection.socket.localPort,
+          );
+          expect(remoteLeaf).toBeDefined();
+          if (!remoteLeaf) throw new Error("missing leaf A connection");
+          const remoteQrp = () =>
+            ultra.node.router.peerState(remoteLeaf).qrp;
+          const sentQrpCount = () =>
+            eventsOfType(leafA, "PEER_MESSAGE_SENT").filter(
+              (event) => event.payloadType === TYPE.ROUTE_TABLE_UPDATE,
+            ).length;
+          await waitFor(
+            () => remoteQrp().table !== null,
+            "empty leaf QRP advertisement",
+          );
+          await leafA.node.router.sendQrpTable(leafConnection);
+          const initialCount = sentQrpCount();
+          expect(initialCount).toBe(2);
+          expect(QrpTable.matchesRemote(remoteQrp(), "uniquealpha")).toBe(
+            false,
+          );
+          await leafA.node.refreshShares();
+          await leafA.node.refreshShares();
+          await leafA.node.router.sendQrpTable(leafConnection);
+          expect(sentQrpCount()).toBe(initialCount);
+
+          await writeShare(leafA, "uniquealpha.txt", "alpha");
+          await leafA.node.refreshShares();
+          await waitFor(
+            () => QrpTable.matchesRemote(remoteQrp(), "uniquealpha"),
+            "new file to appear in the remote QRP table",
+          );
+          await leafA.node.router.sendQrpTable(leafConnection);
+          expect(sentQrpCount()).toBe(initialCount + 2);
+          await leafA.node.refreshShares();
+          await leafA.node.router.sendQrpTable(leafConnection);
+          expect(sentQrpCount()).toBe(initialCount + 2);
+
+          await fs.unlink(
+            path.join(leafA.downloadsDir, "uniquealpha.txt"),
+          );
+          await leafA.node.refreshShares();
+          await waitFor(
+            () =>
+              remoteQrp().table !== null &&
+              !QrpTable.matchesRemote(remoteQrp(), "uniquealpha"),
+            "removed file to disappear from the remote QRP table",
+          );
+          await leafA.node.router.sendQrpTable(leafConnection);
+          expect(sentQrpCount()).toBe(initialCount + 4);
 
           const aResultsBefore = leafA.node.sendQuery(
             "ultra-hit-c",

@@ -3,6 +3,7 @@ import { defaultDoc } from "../../../src/config/document";
 import { RuntimeConfiguration } from "../../../src/config/runtime";
 import type { PeerConnection } from "../../../src/connections/types";
 import { LOCAL_ROUTE, TYPE } from "../../../src/const";
+import { QrpTable } from "../../../src/routing/qrp";
 import { MessageRouter } from "../../../src/routing/router";
 import {
   buildHeader,
@@ -88,4 +89,54 @@ test("router releases per-peer QRP state on departure and all routes on disposal
   router.dispose();
   expect(router.queryRoutes.size).toBe(0);
   expect(router.hasSeen(TYPE.QUERY, "local")).toBe(false);
+});
+
+test("an empty ultrapeer republishes only when its aggregate leaf table changes", async () => {
+  const { router, peers, sent } = routerFixture();
+  const mesh = makePeer("mesh");
+  mesh.role = "ultrapeer";
+  mesh.capabilities.ultrapeerQueryRoutingVersion = "0.1";
+  peers.set(mesh.key, mesh);
+  await router.sendQrpTable(mesh);
+  expect(sent).toHaveLength(2);
+
+  const leaf = makePeer("leaf");
+  leaf.role = "leaf";
+  peers.set(leaf.key, leaf);
+  const table = new QrpTable();
+  table.rebuildFromShares([{ keywords: ["alpha"] }]);
+  const updateLeaf = () => {
+    router.onRouteTableUpdate(leaf, table.encodeReset());
+    for (const patch of table.encodePatchChunks(60 * 1024, 4)) {
+      router.onRouteTableUpdate(leaf, patch);
+    }
+  };
+  updateLeaf();
+  await router.sendQrpTable(mesh);
+  expect(sent).toHaveLength(4);
+  updateLeaf();
+  await router.sendQrpTable(mesh);
+  expect(sent).toHaveLength(4);
+
+  const remote = makePeer("receiver");
+  for (const message of sent.slice(2)) {
+    router.onRouteTableUpdate(remote, message.payload);
+  }
+  expect(
+    QrpTable.matchesRemote(router.peerState(remote).qrp, "alpha"),
+  ).toBe(true);
+
+  peers.delete(leaf.key);
+  router.dropPeer(leaf);
+  await router.sendQrpTable(mesh);
+  expect(sent).toHaveLength(6);
+  for (const message of sent.slice(4)) {
+    router.onRouteTableUpdate(remote, message.payload);
+  }
+  expect(
+    QrpTable.matchesRemote(router.peerState(remote).qrp, "alpha"),
+  ).toBe(false);
+  router.dropPeer(mesh);
+  await router.sendQrpTable(mesh);
+  expect(sent).toHaveLength(8);
 });
