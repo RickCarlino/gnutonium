@@ -92,6 +92,38 @@ function makeManager(
 }
 
 describe("download manager", () => {
+  test("does not replace a dangling symlink at download completion", async () => {
+    await withTempDir(async (dir) => {
+      const node = makeManager(path.join(dir, "config.json"), {
+        runtimeConfig: { downloadRetryLimit: 1 },
+      });
+      const job = await node.manager.queue(hit());
+      const outside = path.join(dir, "outside.txt");
+      await fs.mkdir(path.dirname(job.destPath), { recursive: true });
+      await fs.symlink(outside, job.destPath);
+      node.transfers.direct = async (_hit, destPath) => {
+        await fs.mkdir(path.dirname(destPath), { recursive: true });
+        await fs.writeFile(destPath, "hello");
+      };
+      try {
+        await node.manager.start();
+        await waitFor(
+          () => !!node.manager.getJobs()[0]?.sources[0]?.lastError,
+        );
+        expect(node.manager.getJobs()[0]?.sources[0]?.lastError).toContain(
+          "EEXIST",
+        );
+        expect((await fs.lstat(job.destPath)).isSymbolicLink()).toBe(true);
+        expect(await fs.exists(outside)).toBe(false);
+        expect(await fs.readFile(job.incompletePath, "utf8")).toBe(
+          "hello",
+        );
+      } finally {
+        await node.manager.stop();
+      }
+    });
+  });
+
   test("persists consecutive no-progress failures, resets on new bytes, and keeps total attempts", async () => {
     await withTempDir(async (dir) => {
       const configPath = path.join(dir, "protocol.json");

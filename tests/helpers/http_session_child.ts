@@ -9,7 +9,12 @@ async function main(): Promise<void> {
   // Run dangerous requests in a child so an event-loop regression cannot hang tests.
   const [dir, scenario] = process.argv.slice(2);
   const node = makeNode(path.join(dir, "config.json"));
-  const share = makeShare(1, path.join(dir, "alpha.txt"), "alpha.txt");
+  await fs.mkdir(node.config().downloadsDir, { recursive: true });
+  const share = makeShare(
+    1,
+    path.join(node.config().downloadsDir, "alpha.txt"),
+    "alpha.txt",
+  );
   await fs.writeFile(share.abs, "hello");
   node.shareLibrary.sharesByIndex.set(share.index, share);
   const sockets = new Set<net.Socket>();
@@ -50,15 +55,17 @@ async function main(): Promise<void> {
     assert.fail(`condition not reached: ${response}`);
   }
   try {
-    const later =
-      scenario !== "incomplete-first" && scenario !== "malformed-first";
+    const later = !scenario.endsWith("first");
     const pipelined = scenario === "incomplete-pipelined";
     const initialResponses = Number(later);
     if (later && !pipelined) {
       client.write(`${head}\r\n`);
       await waitFor(() => responseCount() === 1);
     }
-    if (scenario.startsWith("malformed")) {
+    if (scenario.startsWith("oversized")) {
+      client.write(`${head}X-Padding: ${"x".repeat(64 * 1024)}`);
+      await waitFor(() => closed);
+    } else if (scenario.startsWith("malformed")) {
       client.write(`${head}Content-Length: invalid\r\n\r\n`);
       await waitFor(() => closed);
       // Give a deferred, unhandled socket error a chance to terminate the child.

@@ -21,5 +21,4 @@ export type TopologySlotState = {
 };
 
 export type AdmissionResult =
-  | { ok: true }
-  | { ok: false; code: number; reason: string };
+  { ok: true } | { ok: false; code: number; reason: string };

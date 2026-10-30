@@ -1,5 +1,5 @@
 import fs from "node:fs";
-import fsp from "node:fs/promises";
+import type { FileHandle } from "node:fs/promises";
 import net from "node:net";
 import { parseByteRange } from ".";
 import { DEFAULT_USER_AGENT } from "../const";
@@ -10,6 +10,7 @@ import { sha1UrnFromUrn } from "../wire/content_urn";
 import { hasToken } from "../wire/handshake";
 import { parseHttpHeaders } from "../wire/http";
 import { handleBrowseHostGet, isBrowseHostGetRequest } from "./browse";
+import { openSharedFile } from "./file_access";
 import type { TransferService } from "./service";
 import type { ExistingGetRequest } from "./session_types";
 
@@ -181,18 +182,24 @@ export async function streamExistingGetBody(
   absPath: string,
   range: { start: number; end: number },
   keepAlive: boolean,
+  file?: FileHandle,
 ): Promise<void> {
   await new Promise<void>((resolve, reject) => {
-    const rs = fs.createReadStream(absPath, {
+    const options = {
       start: range.start,
       end: range.end,
-    });
+    };
+    const rs = file
+      ? file.createReadStream(options)
+      : fs.createReadStream(absPath, options);
     let done = false;
     const cleanup = () => {
       rs.off("error", onError);
       rs.off("end", onEnd);
       socket.off("close", onClose);
       socket.off("error", onSocketError);
+      rs.unpipe(socket);
+      rs.destroy();
     };
     const finish = () => {
       if (done) return;
@@ -230,28 +237,44 @@ export async function handleExistingGet(
   share?: ShareFile,
 ): Promise<boolean> {
   const request = transfers.parseExistingGetRequest(head);
-  const stat = await fsp.stat(absPath);
-  const range = parseByteRange(request.headers["range"], stat.size);
-  if (!range)
-    return transfers.writeInvalidRangeResponse(socket, request, stat.size);
-  const remaining = transfers.existingGetBodyLength(range);
-  socket.write(
-    transfers.buildExistingGetResponseHeaders(
-      request,
-      range,
-      stat.size,
-      remaining,
-      share,
-    ),
-  );
-  if (request.method === "HEAD" || remaining === 0) {
-    return transfers.finishExistingGetResponse(socket, request.keepAlive);
-  }
-  await transfers.streamExistingGetBody(
-    socket,
+  const file = await openSharedFile(
     absPath,
-    range,
-    request.keepAlive,
+    share ? transfers.config().downloadsDir : undefined,
   );
-  return request.keepAlive;
+  try {
+    const stat = await file.stat();
+    const range = parseByteRange(request.headers["range"], stat.size);
+    if (!range)
+      return transfers.writeInvalidRangeResponse(
+        socket,
+        request,
+        stat.size,
+      );
+    const remaining = transfers.existingGetBodyLength(range);
+    socket.write(
+      transfers.buildExistingGetResponseHeaders(
+        request,
+        range,
+        stat.size,
+        remaining,
+        share,
+      ),
+    );
+    if (request.method === "HEAD" || remaining === 0) {
+      return transfers.finishExistingGetResponse(
+        socket,
+        request.keepAlive,
+      );
+    }
+    await transfers.streamExistingGetBody(
+      socket,
+      absPath,
+      range,
+      request.keepAlive,
+      file,
+    );
+    return request.keepAlive;
+  } finally {
+    await file.close();
+  }
 }

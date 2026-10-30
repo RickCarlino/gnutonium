@@ -10,9 +10,10 @@ import {
   buildUriResRequest,
   parseHttpDownloadHeader,
 } from "../wire/codec";
-import { findHeaderEnd } from "../wire/handshake";
+import { boundedHttpHeaderEnd } from "../wire/http";
 import { browsePeer as browsePeerImpl } from "./browse";
 import { DownloadTimeoutError } from "./errors";
+import { openDownloadFile } from "./file_access";
 import { readHttpDownloadSource } from "./http_download_reader";
 import {
   connectDownloadSocket,
@@ -213,7 +214,7 @@ export function initializeHttpDownloadState(
   onWriteError: (error: Error) => void,
 ): void {
   const raw = state.buf.toString("latin1");
-  const cut = findHeaderEnd(raw);
+  const cut = boundedHttpHeaderEnd(raw);
   if (cut === -1) return;
 
   state.headerDone = true;
@@ -226,7 +227,7 @@ export function initializeHttpDownloadState(
   state.range = parsed.range;
   state.connectionClose = parsed.connectionClose;
   state.ws = fs.createWriteStream(destPath, {
-    flags: state.finalStart > 0 ? "r+" : "w",
+    fd: openDownloadFile(destPath, state.finalStart),
     start: state.finalStart,
   });
   state.ws.on("error", onWriteError);

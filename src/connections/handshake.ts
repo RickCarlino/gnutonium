@@ -19,6 +19,7 @@ import {
   parseHandshakeBlock,
   parsePeerHeaderList,
 } from "../wire/handshake";
+import { boundedHttpHeaderEnd } from "../wire/http";
 import {
   blockedClientMessage,
   blockedClientSignature,
@@ -801,7 +802,7 @@ export function startHttpProbeSession(
   ctx: ProbeCtx,
   raw: string,
 ): void {
-  const cut = findHeaderEnd(raw);
+  const cut = boundedHttpHeaderEnd(raw);
   if (cut === -1) return;
   ctx.mode = "done";
   clearProbeListeners(ctx);

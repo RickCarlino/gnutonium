@@ -109,7 +109,16 @@ export function bytesToIpLE(buf: Buffer): string {
   return `${buf[3]}.${buf[2]}.${buf[1]}.${buf[0]}`;
 }
 
-/** Replace path separators and unsafe dot-only names. */
+/** Make a peer filename a single portable filesystem component. */
 export function safeFileName(name: string): string {
-  return name.replace(/[\\/\0]/g, "_").replace(/^\.+$/, "_");
+  const cleaned = name
+    .replace(/[<>:"|?*\\/\x00-\x1f\x7f-\x9f]/g, "_")
+    .replace(/[. ]+$/, "");
+  if (!cleaned) return "_";
+  // Windows treats these as devices even with an extension or spaces.
+  return /^(?:con|prn|aux|nul|com[1-9¹²³]|lpt[1-9¹²³])(?:[ .]|$)/i.test(
+    cleaned,
+  )
+    ? `_${cleaned}`
+    : cleaned;
 }

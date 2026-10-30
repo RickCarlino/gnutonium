@@ -7,8 +7,8 @@ This guide gets you from zero to a working CLI session with sharing, searching, 
 You can:
 
 - download a prebuilt binary from the [releases page](https://github.com/RickCarlino/gnutella-bun-client/releases)
-- install with `npm install -g gnutonium` (requires Bun 1.4.2 or newer)
-- run from source with Bun 1.4.2 or newer
+- install with `npm install -g gnutonium` (requires Bun 1.4.4 or newer)
+- run from source with Bun 1.4.4 or newer
 
 If you are running from source:
 

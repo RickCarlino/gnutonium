@@ -8,7 +8,7 @@ import { buildHeader, encodeQueryHit } from "../../src/wire/codec";
 import { makeShare } from "./protocol";
 
 /** A localhost-only browse/transfer/cache fixture. Download responses deliberately remain pending. */
-export async function cliServer() {
+export async function cliServer(fileName?: string) {
   const sockets = new Set<net.Socket>();
   const server = net.createServer((socket) => {
     sockets.add(socket);
@@ -23,7 +23,11 @@ export async function cliServer() {
           "127.0.0.1",
           100,
           [1, 2, 3].map((n) =>
-            makeShare(n, `/fixture/file${n}.txt`, `file${n}.txt`),
+            makeShare(
+              n,
+              `/fixture/file${n}.txt`,
+              fileName ?? `file${n}.txt`,
+            ),
           ),
           Buffer.alloc(16, 5),
         );

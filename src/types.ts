@@ -481,11 +481,7 @@ export type GnutellaServentOptions = {
 export type ConnectPeerResult = {
   peer: string;
   status:
-    | "connected"
-    | "already-connected"
-    | "dialing"
-    | "saved"
-    | "blocked";
+    "connected" | "already-connected" | "dialing" | "saved" | "blocked";
   message?: string;
 };
 

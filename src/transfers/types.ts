@@ -33,8 +33,7 @@ export type HttpDownloadProgress = {
 };
 
 export type HttpDownloadEndDecision =
-  | { kind: "complete" }
-  | { kind: "incomplete"; message: string };
+  { kind: "complete" } | { kind: "incomplete"; message: string };
 
 export type HttpDownloadRange = {
   start: number;

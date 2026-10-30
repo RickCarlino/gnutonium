@@ -1,3 +1,4 @@
+import fs from "node:fs";
 import fsp from "node:fs/promises";
 import path from "node:path";
 import { DATA_DOWNLOADS_STATE_FILENAME } from "../const";
@@ -128,12 +129,14 @@ async function fileSize(filePath: string): Promise<number | undefined> {
 async function moveFile(src: string, dest: string): Promise<void> {
   await ensureDir(path.dirname(dest));
   try {
-    await fsp.rename(src, dest);
+    // Creating a link is atomic and refuses an existing destination, including
+    // dangling symlinks. A preflight existence check alone cannot ensure this.
+    await fsp.link(src, dest);
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code !== "EXDEV") throw error;
-    await fsp.copyFile(src, dest);
-    await fsp.unlink(src);
+    await fsp.copyFile(src, dest, fs.constants.COPYFILE_EXCL);
   }
+  await fsp.unlink(src);
 }
 
 /** Owns persisted jobs, retries, and transfer scheduling. */

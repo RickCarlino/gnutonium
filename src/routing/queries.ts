@@ -44,12 +44,10 @@ export function publishedQrpTableForPeer(
     if (!peer.capabilities.ultrapeerQueryRoutingVersion) return undefined;
     return buildAggregateUltrapeerQrp(router);
   }
-  if (
-    !(
-      peer.capabilities.queryRoutingVersion ||
-      peer.capabilities.ultrapeerQueryRoutingVersion
-    )
-  ) {
+  if (!(
+    peer.capabilities.queryRoutingVersion ||
+    peer.capabilities.ultrapeerQueryRoutingVersion
+  )) {
     return undefined;
   }
   return router.qrpTable;

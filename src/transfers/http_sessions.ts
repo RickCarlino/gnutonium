@@ -3,7 +3,7 @@ import { errMsg, toBuffer, ts } from "../shared";
 import { socketCanEnd } from "../transport/socket_utils";
 import { parsePush } from "../wire/codec";
 import { findHeaderEnd } from "../wire/handshake";
-import { parseHttpHeaders } from "../wire/http";
+import { boundedHttpHeaderEnd, parseHttpHeaders } from "../wire/http";
 import type { PendingTransfer, TransferService } from "./service";
 import type { HttpSession, HttpSessionRequest } from "./session_types";
 
@@ -55,7 +55,7 @@ export function pendingHttpSessionHeadEnd(
   _transfers: TransferService,
   session: HttpSession,
 ): number {
-  return findHeaderEnd(session.buf.toString("latin1"));
+  return boundedHttpHeaderEnd(session.buf.toString("latin1"));
 }
 
 /** Remove and return a complete buffered HTTP header. */

@@ -2,7 +2,7 @@
 
 Use this guide if you want to run Gnutonium inside your own TypeScript app instead of driving it through the CLI.
 
-Install with `npm install gnutonium` and run your app with Bun 1.4.2 or newer.
+Install with `npm install gnutonium` and run your app with Bun 1.4.4 or newer.
 
 Most apps only need three things:
 

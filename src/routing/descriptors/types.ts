@@ -17,9 +17,7 @@ export type ResponseRouteOptions = {
 };
 
 export type ResponseRouteDecision =
-  | { kind: "drop" }
-  | { kind: "local" }
-  | { kind: "forward"; route: Route };
+  { kind: "drop" } | { kind: "local" } | { kind: "forward"; route: Route };
 
 export type PongCacheEntry = {
   payload: Buffer;

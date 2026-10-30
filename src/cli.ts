@@ -2,6 +2,7 @@ import path from "node:path";
 import process from "node:process";
 import readline from "node:readline";
 import { completionContext, readlineCompletion } from "./cli/complete";
+import { safeTerminalText } from "./cli/output";
 import { CommandRunner, runExecCommands } from "./cli/runner";
 import { watchStatus } from "./cli/status";
 import { monitorAllowsEvent, type MonitorMode } from "./cli_monitor";
@@ -113,7 +114,7 @@ function log(session: CliSession, msg: string): void {
     readline.cursorTo(process.stdout, 0);
     readline.clearLine(process.stdout, 0);
   }
-  process.stdout.write(`${msg}\n`);
+  process.stdout.write(`${safeTerminalText(msg)}\n`);
   redrawPrompt(session);
 }
 

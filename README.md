@@ -43,7 +43,7 @@ After downloading a Gnutonium build, run the executable directly:
 
 ## Install From npm
 
-Gnutonium requires Bun 1.4.2 or newer for inbound TLS upgrades, including when installed through npm.
+Gnutonium requires Bun 1.4.4 or newer for inbound TLS upgrades, including when installed through npm.
 
 **NOTE:** Gnutonium does not work on Node yet - raise an issue if this is a feature you want.
 

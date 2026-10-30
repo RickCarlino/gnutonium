@@ -12,7 +12,12 @@ import {
 test("retries data arriving while an incomplete request's drain is still busy", async () => {
   await withTempDir(async (dir) => {
     const node = makeNode(path.join(dir, "config.json"));
-    const share = makeShare(1, path.join(dir, "alpha.txt"), "alpha.txt");
+    await fs.mkdir(node.config().downloadsDir, { recursive: true });
+    const share = makeShare(
+      1,
+      path.join(node.config().downloadsDir, "alpha.txt"),
+      "alpha.txt",
+    );
     await fs.writeFile(share.abs, "hello");
     node.shareLibrary.sharesByIndex.set(share.index, share);
     const socket = new MockSocket();

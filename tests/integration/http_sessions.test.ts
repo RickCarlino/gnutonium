@@ -7,6 +7,8 @@ for (const scenario of [
   "incomplete-first",
   "incomplete-later",
   "incomplete-pipelined",
+  "oversized-first",
+  "oversized-later",
 ]) {
   test(`incoming HTTP survives ${scenario} request`, async () => {
     await withTempDir(async (dir) => {

@@ -391,7 +391,7 @@ function ingestBrowseHostBody(
 ): number {
   const descriptorIdHex = browseDescriptorId.toString("hex");
   let added = 0;
-  for (let offset = 0; offset < body.length; ) {
+  for (let offset = 0; offset < body.length;) {
     if (offset + HEADER_LEN > body.length) {
       throw new Error("truncated browse-host packet header");
     }
