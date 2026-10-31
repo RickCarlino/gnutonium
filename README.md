@@ -4,7 +4,7 @@
 
 ![Gnutonium Status TUI screenshot](./status-screenshot.png)
 
-**Don't know what Gnutella is?:** It's OK, I talk way too much about what it is [here](https://rickcarlino.com/notes/p2p/gnutella-explanation.html).
+**Don't know what Gnutella is?:** Read my overly enthusiastic explanation [here](https://rickcarlino.com/notes/p2p/gnutella-explanation.html).
 
 Gnutonium is a single-file, text-based Gnutella client.
 You can also use it as an embedded Gnutella engine in your own TypeScript app.
@@ -14,14 +14,13 @@ It is portable, requiring a single executable. We strive to reduce the number of
 
 ## Prebuilt Binaries
 
-- [Windows](https://github.com/RickCarlino/gnutella-bun-client/releases/latest/download/gnutonium-windows-x64.exe)
-- [Windows (old CPUs)](https://github.com/RickCarlino/gnutella-bun-client/releases/latest/download/gnutonium-windows-x64-baseline.exe)
-- [macOS Intel](https://github.com/RickCarlino/gnutella-bun-client/releases/latest/download/gnutonium-darwin-x64)
-- [macOS Apple Silicon](https://github.com/RickCarlino/gnutella-bun-client/releases/latest/download/gnutonium-darwin-arm64)
-- [Linux builds](https://github.com/RickCarlino/gnutella-bun-client/releases)
+- Windows: [64 Bit](https://github.com/RickCarlino/gnutella-bun-client/releases/latest/download/gnutonium-windows-x64.exe), [Baseline\*](https://github.com/RickCarlino/gnutella-bun-client/releases/latest/download/gnutonium-windows-x64-baseline.exe)
+- Mac: [Intel](https://github.com/RickCarlino/gnutella-bun-client/releases/latest/download/gnutonium-darwin-x64), [Apple Silicon](https://github.com/RickCarlino/gnutella-bun-client/releases/latest/download/gnutonium-darwin-arm64)
+- Linux: [64 Bit](https://github.com/RickCarlino/gnutella-bun-client/releases/latest/download/gnutonium-linux-x64), [Baseline\*](https://github.com/RickCarlino/gnutella-bun-client/releases/latest/download/gnutonium-linux-x64-baseline), [ARM64](https://github.com/RickCarlino/gnutella-bun-client/releases/latest/download/gnutonium-linux-arm64)
+- Linux (Alpine / musl): [64 Bit](https://github.com/RickCarlino/gnutella-bun-client/releases/latest/download/gnutonium-linux-x64-musl), [Baseline\*](https://github.com/RickCarlino/gnutella-bun-client/releases/latest/download/gnutonium-linux-x64-musl-baseline), [ARM64](https://github.com/RickCarlino/gnutella-bun-client/releases/latest/download/gnutonium-linux-arm64-musl)
 - [All releases](https://github.com/RickCarlino/gnutella-bun-client/releases)
 
-Download a prebuilt executable from the [releases page](https://github.com/RickCarlino/gnutella-bun-client/releases).
+\* Baseline builds support older x64 CPUs that cannot run the standard build.
 
 After downloading a Gnutonium build, run the executable directly:
 
