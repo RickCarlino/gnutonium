@@ -1,7 +1,5 @@
 # Quickstart
 
-This guide gets you from zero to a working CLI session with sharing, searching, browsing, and downloading.
-
 ## 1. Get Gnutonium
 
 You can:
@@ -52,7 +50,8 @@ If you changed `config.data_dir`, use `<data_dir>/downloads` instead.
 gnutonium run --config gnutella.json
 ```
 
-Gnutonium will try to bootstrap on its own. If you already know a peer and want to connect to it directly, you can still use `connect <ip:port>` after startup.
+Gnutonium automatically finds peers at startup.
+To manually connect to a known peer, use `connect <ip:port>` after startup.
 
 Useful first commands:
 

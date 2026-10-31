@@ -4,35 +4,24 @@
 
 ![Gnutonium Status TUI screenshot](./status-screenshot.png)
 
-Gnutonium is a small Bun-based Gnutella client you can run from the terminal or embed in a TypeScript app.
+**Don't know what Gnutella is?:** It's OK, I talk way too much about what it is [here](https://rickcarlino.com/notes/p2p/gnutella-explanation.html).
 
-Gnutonium is compatible with major clients like GTK-Gnutella, Phex, Shareaza and others.
+Gnutonium is a single-file, text-based Gnutella client.
+You can also use it as an embedded Gnutella engine in your own TypeScript app.
 
-Features:
-
-- share files from a downloads folder
-- search the Gnutella network
-- browse peer's shared files
-- manage downloads (pause/resume/cancel)
-
-It can be used as:
-
-- an interactive CLI
-- a scriptable CLI runner
-- a library inside another app that requires access to the Gnutella network
+It is compatible with major clients on the Gnutella network in 2026 like GTK-Gnutella, Phex, Shareaza and others.
+It is portable, requiring a single executable. We strive to reduce the number of third party dependencies where possible.
 
 ## Prebuilt Binaries
 
-- [Windows](https://github.com/RickCarlino/gnutella-bun-client/releases/latest/download/gnutonium-windows-x64.exe)
-- [Windows (older CPUs)](https://github.com/RickCarlino/gnutella-bun-client/releases/latest/download/gnutonium-windows-x64-baseline.exe)
-- [macOS Intel](https://github.com/RickCarlino/gnutella-bun-client/releases/latest/download/gnutonium-darwin-x64)
-- [macOS Apple Silicon](https://github.com/RickCarlino/gnutella-bun-client/releases/latest/download/gnutonium-darwin-arm64)
-- [Linux builds](https://github.com/RickCarlino/gnutella-bun-client/releases)
-- [All releases](https://github.com/RickCarlino/gnutella-bun-client/releases)
+* [Windows](https://github.com/RickCarlino/gnutella-bun-client/releases/latest/download/gnutonium-windows-x64.exe)
+* [Windows (old CPUs)](https://github.com/RickCarlino/gnutella-bun-client/releases/latest/download/gnutonium-windows-x64-baseline.exe)
+* [macOS Intel](https://github.com/RickCarlino/gnutella-bun-client/releases/latest/download/gnutonium-darwin-x64)
+* [macOS Apple Silicon](https://github.com/RickCarlino/gnutella-bun-client/releases/latest/download/gnutonium-darwin-arm64)
+* [Linux builds](https://github.com/RickCarlino/gnutella-bun-client/releases)
+* [All releases](https://github.com/RickCarlino/gnutella-bun-client/releases)
 
 Download a prebuilt executable from the [releases page](https://github.com/RickCarlino/gnutella-bun-client/releases).
-
-Older releases use the GnutellaBun name and `gnutella-bun-*` filenames.
 
 After downloading a Gnutonium build, run the executable directly:
 
@@ -43,9 +32,7 @@ After downloading a Gnutonium build, run the executable directly:
 
 ## Install From npm
 
-Gnutonium requires Bun 1.4.4 or newer for inbound TLS upgrades, including when installed through npm.
-
-**NOTE:** Gnutonium does not work on Node yet - raise an issue if this is a feature you want.
+Gnutonium requires Bun 1.4.4 or newer. **NOTE:** Gnutonium does not work on Node yet - raise an issue if this is a feature you want.
 
 ```bash
 npm install -g gnutonium
@@ -65,7 +52,7 @@ bun run bin/gnutonium.ts run --config gnutella.json
 
 ## Library Use
 
-Install the library with `npm install gnutonium` and run it with Bun (not Node). The npm package and CLI command are both named `gnutonium`. The public TypeScript import is:
+Install the library with `npm install gnutonium` and run it with Bun (not Node).
 
 ```ts
 import { GnutellaServent, loadDoc } from "gnutonium";
@@ -82,9 +69,9 @@ Gnutonium identifies itself on the network with vendor code `NIUM`.
 
 ## Guides
 
-- [Quickstart](QUICKSTART.md): get the CLI working in a few minutes
-- [CLI Guide](CLI.md): full command and config reference
-- [Developer Guide](DEVELOPER.md): embed Gnutonium and follow the source reading guide
+* [Quickstart](QUICKSTART.md): get the CLI working in a few minutes
+* [CLI Guide](CLI.md): full command and config reference
+* [Developer Guide](DEVELOPER.md): embed Gnutonium and follow the source reading guide
 
 ## License
 
