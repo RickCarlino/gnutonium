@@ -14,12 +14,12 @@ It is portable, requiring a single executable. We strive to reduce the number of
 
 ## Prebuilt Binaries
 
-* [Windows](https://github.com/RickCarlino/gnutella-bun-client/releases/latest/download/gnutonium-windows-x64.exe)
-* [Windows (old CPUs)](https://github.com/RickCarlino/gnutella-bun-client/releases/latest/download/gnutonium-windows-x64-baseline.exe)
-* [macOS Intel](https://github.com/RickCarlino/gnutella-bun-client/releases/latest/download/gnutonium-darwin-x64)
-* [macOS Apple Silicon](https://github.com/RickCarlino/gnutella-bun-client/releases/latest/download/gnutonium-darwin-arm64)
-* [Linux builds](https://github.com/RickCarlino/gnutella-bun-client/releases)
-* [All releases](https://github.com/RickCarlino/gnutella-bun-client/releases)
+- [Windows](https://github.com/RickCarlino/gnutella-bun-client/releases/latest/download/gnutonium-windows-x64.exe)
+- [Windows (old CPUs)](https://github.com/RickCarlino/gnutella-bun-client/releases/latest/download/gnutonium-windows-x64-baseline.exe)
+- [macOS Intel](https://github.com/RickCarlino/gnutella-bun-client/releases/latest/download/gnutonium-darwin-x64)
+- [macOS Apple Silicon](https://github.com/RickCarlino/gnutella-bun-client/releases/latest/download/gnutonium-darwin-arm64)
+- [Linux builds](https://github.com/RickCarlino/gnutella-bun-client/releases)
+- [All releases](https://github.com/RickCarlino/gnutella-bun-client/releases)
 
 Download a prebuilt executable from the [releases page](https://github.com/RickCarlino/gnutella-bun-client/releases).
 
@@ -69,9 +69,9 @@ Gnutonium identifies itself on the network with vendor code `NIUM`.
 
 ## Guides
 
-* [Quickstart](QUICKSTART.md): get the CLI working in a few minutes
-* [CLI Guide](CLI.md): full command and config reference
-* [Developer Guide](DEVELOPER.md): embed Gnutonium and follow the source reading guide
+- [Quickstart](QUICKSTART.md): get the CLI working in a few minutes
+- [CLI Guide](CLI.md): full command and config reference
+- [Developer Guide](DEVELOPER.md): embed Gnutonium and follow the source reading guide
 
 ## License
 
