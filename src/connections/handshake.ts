@@ -12,7 +12,6 @@ import {
 import type { PeerCapabilities, PeerRole } from "../types";
 import {
   buildHandshakeBlock,
-  describeHandshakeResponse,
   findHeaderEnd,
   hasToken,
   mergeHeaders,
@@ -23,8 +22,13 @@ import { boundedHttpHeaderEnd } from "../wire/http";
 import {
   blockedClientMessage,
   blockedClientSignature,
+  maybeBlockClientHost,
 } from "./client_blocking";
 import type { PeerConnections } from "./connections";
+import {
+  emitHandshakeBlock,
+  emitHandshakeDebug,
+} from "./handshake_logging";
 import {
   buildBaseHandshakeHeaders,
   buildPeerCapabilities,
@@ -33,14 +37,8 @@ import {
   buildRejectHeaders,
   type LocalHandshakePolicy,
 } from "./policy";
+import { shouldUpgradeSocketToTls } from "./tls";
 import type { ProbeCtx } from "./types";
-
-type OutboundHandshakeResult = {
-  caps: PeerCapabilities;
-  role: PeerRole;
-  rest: Buffer;
-  finalHeadersWithRemote: Record<string, string>;
-};
 
 /** Classify and negotiate an incoming socket. */
 export function handleProbe(
@@ -297,196 +295,6 @@ export function finishInbound06Probe(
   );
 }
 
-/** Dial an endpoint and complete the 0.6 handshake. */
-export async function connectPeer06(
-  connections: PeerConnections,
-  host: string,
-  port: number,
-  timeoutMs = connections.config().connectTimeoutMs,
-): Promise<void> {
-  const c = connections.config();
-  const target = normalizePeer(host, port);
-  if (connections.isBlockedHost(host))
-    throw new Error(`peer ${target} is blocked`);
-  emitHandshakeDebug(
-    connections,
-    "outbound",
-    "dial-start",
-    target,
-    `timeoutMs=${timeoutMs}`,
-  );
-  await new Promise<void>((resolve, reject) => {
-    const socket = connections.createConnection({ host, port });
-    socket.setNoDelay(true);
-    let decided = false;
-    let buf = Buffer.alloc(0);
-
-    const cleanup = () => {
-      socket.off("error", fail);
-      socket.off("close", onClose);
-      socket.off("connect", onConnect);
-      socket.off("data", onData);
-    };
-
-    const fail = (error: unknown) => {
-      if (decided) return;
-      decided = true;
-      cleanup();
-      emitHandshakeDebug(
-        connections,
-        "outbound",
-        "failed",
-        target,
-        errMsg(error),
-      );
-      socket.destroy();
-      reject(error instanceof Error ? error : new Error(errMsg(error)));
-    };
-    socket.setTimeout(timeoutMs, () => fail(new Error("connect timeout")));
-
-    const onConnect = () => {
-      if (connections.isBlockedHost(socket.remoteAddress)) {
-        fail(
-          new Error(`blocked IP ${normalizeIpv4(socket.remoteAddress)}`),
-        );
-        return;
-      }
-      const headers = connections.baseHandshakeHeaders(
-        socket.remoteAddress,
-      );
-      if (
-        connections.tlsEnabled() &&
-        connections.canUpgradeSocketToTls(socket)
-      )
-        headers.upgrade = connections.tlsUpgradeToken();
-      socket.write(buildHandshakeBlock("GNUTELLA CONNECT/0.6", headers));
-      emitHandshakeBlock(
-        connections,
-        "outbound",
-        "connect-sent",
-        target,
-        "GNUTELLA CONNECT/0.6",
-        headers,
-      );
-    };
-    const onClose = () =>
-      fail(new Error("socket closed during handshake"));
-    const onData = (chunk: string | Buffer) => {
-      if (decided) return;
-      buf = Buffer.concat([buf, toBuffer(chunk)]);
-      let result: OutboundHandshakeResult | undefined;
-      try {
-        result = parseOutboundHandshakeResult(
-          connections,
-          target,
-          socket,
-          buf,
-          !!c.enableCompression,
-        );
-      } catch (error) {
-        fail(error);
-        return;
-      }
-      if (!result) return;
-
-      const { caps, role, rest, finalHeadersWithRemote } = result;
-      const acceptance = connections.canAcceptPeerRole(role);
-      if (!acceptance.ok) {
-        socket.write(
-          buildHandshakeBlock(
-            `GNUTELLA/0.6 ${acceptance.code} ${acceptance.reason}`,
-            {},
-          ),
-        );
-        fail(
-          new Error(
-            `0.6 handshake rejected by ${target}: ${acceptance.reason}`,
-          ),
-        );
-        return;
-      }
-      socket.write(
-        buildHandshakeBlock("GNUTELLA/0.6 200 OK", finalHeadersWithRemote),
-      );
-      emitHandshakeBlock(
-        connections,
-        "outbound",
-        "final-sent",
-        target,
-        "GNUTELLA/0.6 200 OK",
-        finalHeadersWithRemote,
-      );
-      decided = true;
-      socket.setTimeout(0);
-      cleanup();
-      const upgradeToTls = shouldUpgradeSocketToTls(
-        connections,
-        socket,
-        connections.peerAcceptedTlsUpgrade(caps.headers),
-        true,
-      );
-      if (!upgradeToTls) {
-        connections.attachPeer(
-          socket,
-          true,
-          target,
-          role,
-          caps,
-          rest,
-          target,
-        );
-        resolve();
-        return;
-      }
-      emitHandshakeDebug(
-        connections,
-        "outbound",
-        "tls-upgrade-start",
-        target,
-        "upgrading socket to TLS",
-      );
-      void connections
-        .upgradeSocketToTls(socket, "client", rest)
-        .then((tlsSocket) => {
-          emitHandshakeDebug(
-            connections,
-            "outbound",
-            "tls-upgrade-ok",
-            target,
-            "TLS active",
-          );
-          connections.attachPeer(
-            tlsSocket,
-            true,
-            target,
-            role,
-            caps,
-            Buffer.alloc(0),
-            target,
-          );
-          resolve();
-        })
-        .catch((error) => {
-          emitHandshakeDebug(
-            connections,
-            "outbound",
-            "tls-upgrade-failed",
-            target,
-            errMsg(error),
-          );
-          socket.destroy();
-          reject(
-            error instanceof Error ? error : new Error(errMsg(error)),
-          );
-        });
-    };
-    socket.on("error", fail);
-    socket.on("close", onClose);
-    socket.on("connect", onConnect);
-    socket.on("data", onData);
-  });
-}
-
 function clearProbeListeners(ctx: ProbeCtx): void {
   if (ctx.onData) ctx.socket.off("data", ctx.onData);
   if (ctx.onEnd) ctx.socket.off("end", ctx.onEnd);
@@ -496,16 +304,6 @@ function clearProbeListeners(ctx: ProbeCtx): void {
 
 function blockedProbeMessage(ip: string): string {
   return `blocked IP ${ip}`;
-}
-
-function maybeBlockClientHost(
-  connections: PeerConnections,
-  remoteHost: string | undefined,
-): string | undefined {
-  const ip = normalizeIpv4(remoteHost);
-  if (!ip) return undefined;
-  connections.blockIp(ip);
-  return ip;
 }
 
 function probePreview(buf: Buffer): string | undefined {
@@ -561,40 +359,6 @@ function terminateProbeEarly(
 
 function handshakePeerLabel(socket: net.Socket): string {
   return `${socket.remoteAddress || "?"}:${socket.remotePort || "?"}`;
-}
-
-function emitHandshakeDebug(
-  connections: PeerConnections,
-  direction: "inbound" | "outbound",
-  phase: string,
-  peer: string,
-  message: string,
-): void {
-  connections.deps.emit({
-    type: "HANDSHAKE_DEBUG",
-    at: ts(),
-    direction,
-    phase,
-    peer,
-    message,
-  });
-}
-
-function emitHandshakeBlock(
-  connections: PeerConnections,
-  direction: "inbound" | "outbound",
-  phase: string,
-  peer: string,
-  startLine: string,
-  headers: Record<string, string>,
-): void {
-  emitHandshakeDebug(
-    connections,
-    direction,
-    phase,
-    peer,
-    describeHandshakeResponse(startLine, headers),
-  );
 }
 
 function localHandshakePolicy(
@@ -841,20 +605,6 @@ function compressionAccepted(
   return enabled && hasToken(headers["content-encoding"], "deflate");
 }
 
-function shouldUpgradeSocketToTls(
-  connections: PeerConnections,
-  socket: net.Socket,
-  acceptedByServer: boolean,
-  acceptedByClient: boolean,
-): boolean {
-  return (
-    connections.tlsEnabled() &&
-    connections.canUpgradeSocketToTls(socket) &&
-    acceptedByServer &&
-    acceptedByClient
-  );
-}
-
 function attachInbound06Peer(
   connections: PeerConnections,
   socket: net.Socket,
@@ -909,87 +659,4 @@ function attachInbound06Peer(
       });
       socket.destroy();
     });
-}
-
-function parseOutboundHandshakeResult(
-  connections: PeerConnections,
-  target: string,
-  socket: net.Socket,
-  buf: Buffer,
-  compressionEnabled: boolean,
-): OutboundHandshakeResult | undefined {
-  const raw = buf.toString("latin1");
-  const cut = findHeaderEnd(raw);
-  if (cut === -1) return undefined;
-
-  const { startLine, headers } = parseHandshakeBlock(raw.slice(0, cut));
-  emitHandshakeBlock(
-    connections,
-    "outbound",
-    "response-recv",
-    target,
-    startLine,
-    headers,
-  );
-  const blockedSignature = blockedClientSignature(headers);
-  if (blockedSignature) {
-    const message = blockedClientMessage(
-      blockedSignature,
-      socket.remoteAddress,
-    );
-    maybeBlockClientHost(connections, socket.remoteAddress);
-    emitHandshakeDebug(
-      connections,
-      "outbound",
-      "blocked-client",
-      target,
-      message,
-    );
-    throw new Error(message);
-  }
-  connections.absorbHandshakeHeaders(headers, socket.remoteAddress);
-  if (
-    /^GNUTELLA OK/i.test(startLine) ||
-    /^GNUTELLA\/0\.4 200/i.test(startLine)
-  ) {
-    throw new Error(
-      `unsupported 0.4 handshake response from ${target}: ${describeHandshakeResponse(startLine, headers)}`,
-    );
-  }
-
-  const match = /^GNUTELLA\/0\.([0-9]+)\s+(\d+)/i.exec(startLine);
-  if (!match) {
-    throw new Error(
-      `unexpected handshake response from ${target}: ${describeHandshakeResponse(startLine, headers)}`,
-    );
-  }
-
-  const code = Number(match[2]);
-  if (code !== 200) {
-    throw new Error(
-      `0.6 handshake rejected by ${target}: ${describeHandshakeResponse(startLine, headers)}`,
-    );
-  }
-
-  const finalHeadersWithRemote = connections.buildClientFinalHeaders(
-    headers,
-    socket.remoteAddress,
-  );
-  const compressIn =
-    hasToken(headers["content-encoding"], "deflate") && compressionEnabled;
-  const compressOut =
-    hasToken(finalHeadersWithRemote["content-encoding"], "deflate") &&
-    compressionEnabled;
-  const caps = connections.buildCapabilities(
-    `0.${match[1]}`,
-    mergeHeaders(headers, finalHeadersWithRemote),
-    compressIn,
-    compressOut,
-  );
-  return {
-    caps,
-    role: connections.classifyPeerRole(caps),
-    rest: buf.subarray(cut),
-    finalHeadersWithRemote,
-  };
 }

@@ -11,6 +11,7 @@ import type {
 import type { DescriptorHeader } from "../wire/types";
 import * as handshake from "./handshake";
 import * as lifecycle from "./lifecycle";
+import * as outboundHandshake from "./outbound_handshake";
 import * as state from "./peers";
 import * as topology from "./roles";
 import type { PeerSession } from "./session";
@@ -300,9 +301,11 @@ export class PeerConnections {
 
   /** Dial an endpoint and complete the 0.6 handshake. */
   connectPeer06(
-    ...args: OwnerArguments<Parameters<typeof handshake.connectPeer06>>
-  ): ReturnType<typeof handshake.connectPeer06> {
-    return handshake.connectPeer06(this, ...args);
+    ...args: OwnerArguments<
+      Parameters<typeof outboundHandshake.connectPeer06>
+    >
+  ): ReturnType<typeof outboundHandshake.connectPeer06> {
+    return outboundHandshake.connectPeer06(this, ...args);
   }
 
   /** Return the configured leaf or ultrapeer mode. */

@@ -254,3 +254,18 @@ export async function upgradeSocketToTls(
     },
   );
 }
+
+/** Check whether both peers agreed to an available TLS upgrade. */
+export function shouldUpgradeSocketToTls(
+  connections: PeerConnections,
+  socket: net.Socket,
+  acceptedByServer: boolean,
+  acceptedByClient: boolean,
+): boolean {
+  return (
+    connections.tlsEnabled() &&
+    connections.canUpgradeSocketToTls(socket) &&
+    acceptedByServer &&
+    acceptedByClient
+  );
+}

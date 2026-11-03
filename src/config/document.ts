@@ -118,6 +118,18 @@ function recordLocalIpv4Candidate(
   if (!candidates.privateAddr) candidates.privateAddr = host;
 }
 
+function availableNetworkInterfaces(): ReturnType<
+  typeof os.networkInterfaces
+> {
+  try {
+    return os.networkInterfaces();
+  } catch {
+    // Sandboxes can deny the OS interface query. Treat that as a host
+    // with no usable IPv4 interfaces so address detection can fall back.
+    return {};
+  }
+}
+
 /** Choose a local IPv4 address suitable for advertising. */
 export function detectLocalAdvertisedIpv4(listenHost: string): string {
   const listen = normalizeIpv4(listenHost);
@@ -126,7 +138,7 @@ export function detectLocalAdvertisedIpv4(listenHost: string): string {
   const candidates: LocalIpv4Candidates = {
     loopback: "127.0.0.1",
   };
-  for (const iface of Object.values(os.networkInterfaces())) {
+  for (const iface of Object.values(availableNetworkInterfaces())) {
     for (const addr of iface || []) {
       const host = interfaceIpv4Host(addr);
       if (!host) continue;

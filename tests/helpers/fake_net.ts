@@ -227,7 +227,22 @@ class FakeServer extends EventEmitter {
 
 class FakeNet {
   private readonly servers = new Map<string, FakeServer>();
+  private readonly sockets = new Set<FakeSocket>();
   private nextPort = 20_000;
+
+  dispose(): void {
+    for (const socket of this.sockets) socket.destroy();
+    this.sockets.clear();
+    for (const server of this.servers.values()) server.close();
+    this.servers.clear();
+  }
+
+  private createSocket(): FakeSocket {
+    const socket = new FakeSocket();
+    this.sockets.add(socket);
+    socket.once("close", () => this.sockets.delete(socket));
+    return socket;
+  }
 
   allocatePort(): number {
     return this.nextPort++;
@@ -267,14 +282,14 @@ class FakeNet {
     };
     const host = String(tcpOptions.host || "127.0.0.1");
     const port = Number(tcpOptions.port || 0);
-    const socket = new FakeSocket();
+    const socket = this.createSocket();
     const server = this.findServer(host, port);
     if (!server) {
       queueMicrotask(() => socket.destroy(connectionRefused(host, port)));
       return socket as unknown as net.Socket;
     }
 
-    const serverSocket = new FakeSocket();
+    const serverSocket = this.createSocket();
     const clientPort = this.allocatePort();
 
     socket.localAddress = "127.0.0.1";
@@ -291,6 +306,7 @@ class FakeNet {
     serverSocket.pairWith(socket);
 
     queueMicrotask(() => {
+      if (socket.destroyed || serverSocket.destroyed) return;
       server.accept(serverSocket);
       socket.emit("connect");
     });
@@ -325,6 +341,7 @@ export async function withFakeNet<T>(fn: () => Promise<T>): Promise<T> {
   try {
     return await fn();
   } finally {
+    fake.dispose();
     (
       net as unknown as {
         createConnection: typeof net.createConnection;

@@ -1,4 +1,5 @@
 import { normalizeIpv4 } from "../shared";
+import type { PeerConnections } from "./connections";
 
 function normalizeClientSignature(
   value: string | undefined,
@@ -28,4 +29,15 @@ export function blockedClientMessage(
   const parts = [`signature=${JSON.stringify(signature)}`];
   if (ip) parts.push(`ip=${ip}`);
   return `blocked client ${parts.join(" ")}`;
+}
+
+/** Block a normalized address supplied by a blocked client. */
+export function maybeBlockClientHost(
+  connections: PeerConnections,
+  remoteHost: string | undefined,
+): string | undefined {
+  const ip = normalizeIpv4(remoteHost);
+  if (!ip) return undefined;
+  connections.blockIp(ip);
+  return ip;
 }

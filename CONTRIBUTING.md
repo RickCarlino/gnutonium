@@ -81,6 +81,15 @@ Run `bun run verify` for deterministic checks and standalone builds. See
 checks and [acceptance.json](tests/interop/acceptance.json) for recorded
 compatibility results.
 
+Verification has a 600-second overall deadline. Override it with
+`GNUTONIUM_VERIFY_TIMEOUT_SEC=900 bun run verify` when needed. On timeout
+(exit 124), interruption, or command failure, its supervisor terminates the
+verification process groups, including detached groups created by nested
+supervisors, then sends SIGKILL after a two-second grace period if processes
+remain. Inherited environment markers identify detached descendants even
+after their original parents exit. This uses Unix process groups and `ps`,
+matching the Bash verification scripts.
+
 ## Import Organization
 
 Run `bun run imports:organize` to organize imports across `src`, `bin`,

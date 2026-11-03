@@ -4,6 +4,40 @@ import net from "node:net";
 import { withFakeNet } from "../../helpers/fake_net";
 
 describe("fake net helper", () => {
+  test("cleans up sockets, listeners and idle timers when a fixture fails", async () => {
+    const originalConnection = net.createConnection;
+    const originalServer = net.createServer;
+    let server: net.Server | undefined;
+    const sockets: net.Socket[] = [];
+    let timeouts = 0;
+    await expect(
+      withFakeNet(async () => {
+        server = net.createServer((socket) => {
+          sockets.push(socket);
+          socket.setTimeout(1, () => timeouts++);
+        });
+        await new Promise<void>((resolve) =>
+          server!.listen(0, "127.0.0.1", resolve),
+        );
+        const client = net.createConnection({
+          host: "127.0.0.1",
+          port: (server.address() as net.AddressInfo).port,
+        });
+        sockets.push(client);
+        await once(client, "connect");
+        client.setTimeout(1, () => timeouts++);
+        throw new Error("fixture failed");
+      }),
+    ).rejects.toThrow("fixture failed");
+    expect(net.createConnection).toBe(originalConnection);
+    expect(net.createServer).toBe(originalServer);
+    expect(server?.address()).toBeNull();
+    expect(sockets).toHaveLength(2);
+    expect(sockets.every((socket) => socket.destroyed)).toBe(true);
+    await Bun.sleep(10);
+    expect(timeouts).toBe(0);
+  });
+
   test("provides connected sockets with addresses and idle timeouts", async () => {
     await withFakeNet(async () => {
       const connections: net.Socket[] = [];

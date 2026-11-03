@@ -4,6 +4,7 @@ import net from "node:net";
 import path from "node:path";
 import { buildPeerCapabilities } from "../../../src/connections/policy";
 import { parseHandshakeBlock } from "../../../src/wire/handshake";
+import { withFakeNet } from "../../helpers/fake_net";
 import { makeNode, withTempDir } from "../../helpers/protocol";
 
 const fixtures = path.resolve(__dirname, "../../fixtures/gtk-1.3.1");
@@ -22,37 +23,37 @@ test("parses an independently recorded GTK TLS/compression response", async () =
 });
 
 test("ingests GTK's recorded compressed, chunked browse response", async () => {
-  await withTempDir(async (dir) => {
-    const response = await fs.readFile(
-      path.join(fixtures, "browse-response.bin"),
-    );
-    const sockets = new Set<net.Socket>();
-    const server = net.createServer((socket) => {
-      sockets.add(socket);
-      socket.once("close", () => sockets.delete(socket));
-      socket.once("data", () => socket.end(response));
-    });
-    await new Promise<void>((resolve, reject) => {
-      server.once("error", reject);
-      server.listen(0, "127.0.0.1", resolve);
-    });
-    const address = server.address() as net.AddressInfo;
-    const node = makeNode(path.join(dir, "config.json"), {
-      runtimeConfig: { listenHost: "127.0.0.1" },
-    });
-    try {
-      const count = await node.browsePeer(`127.0.0.1:${address.port}`);
-      expect(count.resultCount).toBe(1);
-      expect(node.getResults(count.id)[0]).toMatchObject({
-        fileName: "gtk-interop-sample.txt",
-        fileSize: 184320,
-        vendorCode: "GTKG",
+  await withFakeNet(async () => {
+    await withTempDir(async (dir) => {
+      const response = await fs.readFile(
+        path.join(fixtures, "browse-response.bin"),
+      );
+      const server = net.createServer((socket) => {
+        socket.once("data", () => socket.end(response));
       });
-      expect(node.getResults(count.id)[0]?.sha1Urn).toMatch(/^urn:sha1:/);
-    } finally {
-      for (const socket of sockets) socket.destroy();
-      await new Promise<void>((resolve) => server.close(() => resolve()));
-    }
+      await new Promise<void>((resolve, reject) => {
+        server.once("error", reject);
+        server.listen(0, "127.0.0.1", resolve);
+      });
+      const address = server.address() as net.AddressInfo;
+      const node = makeNode(path.join(dir, "config.json"), {
+        runtimeConfig: { listenHost: "127.0.0.1" },
+      });
+      try {
+        const count = await node.browsePeer(`127.0.0.1:${address.port}`);
+        expect(count.resultCount).toBe(1);
+        expect(node.getResults(count.id)[0]).toMatchObject({
+          fileName: "gtk-interop-sample.txt",
+          fileSize: 184320,
+          vendorCode: "GTKG",
+        });
+        expect(node.getResults(count.id)[0]?.sha1Urn).toMatch(
+          /^urn:sha1:/,
+        );
+      } finally {
+        await node.stop();
+      }
+    });
   });
 });
 
