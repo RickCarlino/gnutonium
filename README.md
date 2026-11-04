@@ -4,6 +4,10 @@
 
 ![Gnutonium Status TUI screenshot](./status-screenshot.png)
 
+(Screenshot: Gnutonium's download monitor. Keep the client running and run
+`gnutonium status --config gnutella.json` to view active downloads [docs](CLI.md#status-panel) for more details.)
+
+
 **Don't know what Gnutella is?:** Read my overly enthusiastic explanation [here](https://rickcarlino.com/notes/p2p/gnutella-explanation.html).
 
 Gnutonium is a single-file, text-based Gnutella client.
