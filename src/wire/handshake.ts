@@ -1,8 +1,4 @@
-import {
-  CANONICAL_HEADER_NAMES,
-  INTERESTING_HANDSHAKE_HEADERS,
-  MAX_HEADER_BYTES,
-} from "../const";
+import { CANONICAL_HEADER_NAMES, MAX_HEADER_BYTES } from "../const";
 import { normalizeIpv4, parsePeer } from "../discovery/addresses";
 import type { PeerAddr } from "../types";
 
@@ -167,13 +163,13 @@ export function buildHandshakeBlock(
 function summarizeHandshakeHeaders(
   headers: Record<string, string>,
 ): string {
-  const parts = INTERESTING_HANDSHAKE_HEADERS.filter(
-    (key) => !!headers[key],
-  ).map((key) => `${canonicalHeaderName(key)}=${headers[key]}`);
+  const parts = Object.entries(headers).map(
+    ([key, value]) => `${canonicalHeaderName(key)}=${value}`,
+  );
   return parts.length ? ` [${parts.join("; ")}]` : "";
 }
 
-/** Summarize a handshake response for diagnostics. */
+/** Describe a handshake and every header for diagnostics. */
 export function describeHandshakeResponse(
   startLine: string,
   headers: Record<string, string>,

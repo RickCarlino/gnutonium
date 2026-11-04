@@ -90,12 +90,16 @@ ptyTest(
           await client.send("\t");
           await client.wait("downloads");
           await client.send("\x15");
+          await client.send("monitor all\r");
           await client.send(
             `connect 127.0.0.1:${remoteConfig.doc.config.listenPort}\r`,
           );
           await client.wait(
             `peer 127.0.0.1:${remoteConfig.doc.config.listenPort} connected`,
           );
+          expect(client.output()).toContain("X-Query-Routing=0.2");
+          expect(client.output()).toContain("X-Max-TTL=4");
+          expect(client.output()).toContain("Accept-Encoding=deflate");
           await client.send(
             `browse 127.0.0.1:${remoteConfig.doc.config.listenPort}\r`,
           );

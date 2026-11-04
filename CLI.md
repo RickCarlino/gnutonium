@@ -94,8 +94,8 @@ Most people won't need to change much beyond the data directory and networking s
 | `config.blocked_ips`                  | IPv4 addresses Gnutonium should refuse, forget, and stop dialing.                                                                                        |
 | `config.gwebcaches`               | Cache objects keyed by URL, including configured and discovered caches. Missing or empty collections are populated with bundled defaults.                                                       |
 | `config.ultrapeer`                    | Set to `true` to run as an ultrapeer. Leave it `false` for a normal lightweight client.                                                                  |
-| `config.max_ultrapeer_connections`    | Maximum number of ultrapeer-to-ultrapeer connections.                                                                                                    |
-| `config.max_leaf_connections`         | Maximum number of leaf connections.                                                                                                                      |
+| `config.max_ultrapeer_connections`    | Maximum number of connections to ultrapeers. Defaults to `3` in leaf mode or `40` in ultrapeer mode.                                                       |
+| `config.max_leaf_connections`         | Maximum number of leaf connections in ultrapeer mode. Defaults to `100`.                                                                                  |
 | `config.max_ttl`                      | Maximum descriptor TTL Gnutonium will advertise or relay. Defaults to `4`.                                                                               |
 | `config.log_ignore`                   | Event categories to hide while monitoring is enabled.                                                                                                    |
 | `config.downloads_dir`                | Where completed downloads are stored. Relative paths are resolved under `data_dir`.                                                                      |
@@ -106,6 +106,8 @@ Most people won't need to change much beyond the data directory and networking s
 | `config.download_retry_backoff_sec`   | How long to wait before retrying a failed source. Defaults to `60` seconds.                                                                              |
 | `config.download_idle_timeout_ms`     | Maximum time a download body can stop making progress before timing out. Defaults to `60000` ms. Connection and HTTP-header timeouts stay at 15 seconds. |
 | `config.verify_downloads`             | Verifies completed files against their SHA1 URN when one is available. Defaults to `true`.                                                               |
+
+Explicit connection limits are preserved, including limits saved by older versions. Remove `max_ultrapeer_connections` to use the default for the selected mode, or set it explicitly when switching modes. Compression is enabled by default. Adjust the limits to fit your available bandwidth and CPU capacity.
 
 ### Remembered State
 

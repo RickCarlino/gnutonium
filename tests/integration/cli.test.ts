@@ -4,6 +4,7 @@ import path from "node:path";
 import { CommandRunner } from "../../src/cli/runner";
 import { createCacheState } from "../../src/discovery/gwebcache/state";
 import type { DownloadJob } from "../../src/downloads";
+import { GnutellaServent } from "../../src/protocol";
 import { executeLine, executionContext } from "../helpers/cli";
 import {
   cliConfig,
@@ -11,6 +12,57 @@ import {
   cliServer,
 } from "../helpers/cli_process";
 import { makeNode, withTempDir } from "../helpers/protocol";
+
+test("real --exec monitor reports complete handshake capabilities", async () => {
+  const cache = await cliServer();
+  try {
+    await withTempDir(async (dir) => {
+      const remoteConfig = await cliConfig(
+        path.join(dir, "remote"),
+        cache.port,
+      );
+      const remote = new GnutellaServent(
+        remoteConfig.configPath,
+        remoteConfig.doc,
+      );
+      try {
+        await remote.start();
+        const local = await cliConfig(path.join(dir, "local"), cache.port);
+        const commands = [
+          "monitor all",
+          `connect 127.0.0.1:${remoteConfig.doc.config.listenPort}`,
+          "quit",
+        ];
+        const child = Bun.spawn(
+          [
+            ...cliInvocation(local.configPath),
+            ...commands.flatMap((command) => ["--exec", command]),
+          ],
+          { stdout: "pipe", stderr: "pipe" },
+        );
+        const [stdout, stderr, code] = await Promise.all([
+          new Response(child.stdout).text(),
+          new Response(child.stderr).text(),
+          child.exited,
+        ]);
+        expect(code).toBe(0);
+        expect(stderr).toBe("");
+        expect(stdout).toContain("[hs outbound connect-sent]");
+        expect(stdout).toContain("[hs outbound response-recv]");
+        expect(stdout).toContain("X-Query-Routing=0.2");
+        expect(stdout).toContain("X-Ultrapeer-Query-Routing=0.1");
+        expect(stdout).toContain("X-Max-TTL=4");
+        expect(stdout).toContain("X-Requeries=False");
+        expect(stdout).toContain("Accept-Encoding=deflate");
+        expect(stdout).toContain("Content-Encoding=deflate");
+      } finally {
+        await remote.stop();
+      }
+    });
+  } finally {
+    await cache.close();
+  }
+}, 15000);
 
 test("localhost runner batches real search results and queued jobs without public bootstrap", async () => {
   const server = await cliServer();

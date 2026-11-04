@@ -32,6 +32,7 @@ import {
   ENABLE_PONG_CACHING,
   ENABLE_QRP,
   ENABLE_TLS,
+  LEAF_MAX_ULTRAPEER_CONNECTIONS,
   MAX_LEAF_CONNECTIONS,
   MAX_PAYLOAD_BYTES,
   MAX_RESULTS_PER_QUERY,
@@ -212,6 +213,12 @@ function derivedMaxConnections(config: ConnectionLimitConfig): number {
     : config.maxUltrapeerConnections;
 }
 
+function defaultMaxUltrapeerConnections(ultrapeer: boolean): number {
+  return ultrapeer
+    ? MAX_ULTRAPEER_CONNECTIONS
+    : LEAF_MAX_ULTRAPEER_CONNECTIONS;
+}
+
 function runtimeDownloadConfig(
   config: ConfigDoc["config"],
   dataDir: string,
@@ -267,7 +274,7 @@ export function runtimeConfigFor(
   const nodeMode = doc.config.ultrapeer === true ? "ultrapeer" : "leaf";
   const maxUltrapeerConnections =
     positiveIntegerOrUndefined(doc.config.maxUltrapeerConnections) ||
-    MAX_ULTRAPEER_CONNECTIONS;
+    defaultMaxUltrapeerConnections(doc.config.ultrapeer);
   const maxLeafConnections =
     positiveIntegerOrUndefined(doc.config.maxLeafConnections) ||
     MAX_LEAF_CONNECTIONS;
@@ -442,7 +449,7 @@ export function defaultDoc(configPath: string): ConfigDoc {
       listenPort: defaultListenPortForServentId(serventIdHex),
       blockedIps: [],
       ultrapeer: false,
-      maxUltrapeerConnections: MAX_ULTRAPEER_CONNECTIONS,
+      maxUltrapeerConnections: defaultMaxUltrapeerConnections(false),
       maxLeafConnections: MAX_LEAF_CONNECTIONS,
       maxTtl: MAX_TTL,
       dataDir: base,
@@ -608,7 +615,9 @@ function buildLoadedDoc(
         defaultListenPortForServentId(serventIdHex),
       blockedIps: [],
       ultrapeer: config.ultrapeer === true,
-      maxUltrapeerConnections: defaults.config.maxUltrapeerConnections,
+      maxUltrapeerConnections: defaultMaxUltrapeerConnections(
+        config.ultrapeer === true,
+      ),
       maxLeafConnections: defaults.config.maxLeafConnections,
       maxTtl: defaults.config.maxTtl,
       dataDir: resolveDataDir(configPath, config),

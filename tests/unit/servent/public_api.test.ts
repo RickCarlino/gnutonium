@@ -111,9 +111,9 @@ describe("protocol config and public helpers", () => {
         ...KNOWN_CACHES,
       ]);
       expectReasonableRandomListenPort(createdRuntime.listenPort);
-      expect(createdRuntime.maxConnections).toBe(64);
-      expect(createdRuntime.maxUltrapeerConnections).toBe(64);
-      expect(createdRuntime.maxLeafConnections).toBe(64);
+      expect(createdRuntime.maxConnections).toBe(3);
+      expect(createdRuntime.maxUltrapeerConnections).toBe(3);
+      expect(createdRuntime.maxLeafConnections).toBe(100);
       await expect(fs.stat(configPath)).resolves.toBeDefined();
       await expect(
         fs.stat(createdRuntime.downloadsDir),
@@ -159,8 +159,8 @@ describe("protocol config and public helpers", () => {
         ...KNOWN_CACHES,
       ]);
       expect(persisted.config.max_connections).toBeUndefined();
-      expect(persisted.config.max_ultrapeer_connections).toBe(64);
-      expect(persisted.config.max_leaf_connections).toBe(64);
+      expect(persisted.config.max_ultrapeer_connections).toBe(3);
+      expect(persisted.config.max_leaf_connections).toBe(100);
       expect(persisted.config.data_dir).toBe(path.join(dir, "nested"));
       expect(persisted.config.log_ignore).toBeUndefined();
       expect("listen_host" in persisted.config).toBe(false);
@@ -418,8 +418,8 @@ describe("protocol config and public helpers", () => {
       expect(camelLoaded.config.advertisedPort).toBeUndefined();
       expect(camelLoaded.config.dataDir).toBe(dir);
       expect(camelLoaded.config.maxConnections).toBeUndefined();
-      expect(camelLoaded.config.maxUltrapeerConnections).toBe(64);
-      expect(camelLoaded.config.maxLeafConnections).toBe(64);
+      expect(camelLoaded.config.maxUltrapeerConnections).toBe(3);
+      expect(camelLoaded.config.maxLeafConnections).toBe(100);
       expect(camelLoaded.config.maxTtl).toBe(4);
       expect(camelLoaded.config.monitorIgnoreEvents).toBeUndefined();
       expect(camelLoaded.state.serventIdHex).toMatch(/^[0-9a-f]{32}$/);

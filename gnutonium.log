@@ -1,0 +1,128 @@
+Script started on 2026-11-03 19:16:40-06:00 [COMMAND="./dist/gnutonium-linux-x64" TERM="xterm-256color" TTY="/dev/pts/2" COLUMNS="159" LINES="60"]
+[1G[0J[00/09 000] [13G[1G[0J[00/09 000] [13G[1G[0J[00/09 000] [13G[1G[0J[00/09 000] [13G[1G[0J[00/09 000] [13G[1G[0J[00/09 000] [13G[1G[0J[00/09 000] [13G[1G[0J[00/09 000] [13G[1G[0J[00/09 000] [13G[1G[0J[00/09 000] [13G[1G[0J[00/09 000] [13G[1G[0J[01/09 000] [13G[1G[0J[01/09 000] [13G[1G[0J[01/09 000] [13G[1G[0J[01/09 000] [13G[1G[0J[01/09 000] [13G[1G[0J[01/09 000] [13G[1G[0J[01/09 000] [13G[1G[0J[01/09 000] [13G[1G[0J[01/09 000] [13G[1G[0J[01/09 000] [13G[1G[0J[01/09 000] [13G[1G[0J[01/09 000] [13G[1G[0J[02/09 000] [13G[1G[0J[02/09 000] [13G[1G[0J[02/09 000] [13G[1G[0J[02/09 000] [13G[1G[0J[02/09 000] [13G[1G[0J[02/09 000] [13G[1G[0J[03/09 000] [13G[1G[0J[03/09 000] [13G[1G[0J[04/09 000] [13G[1G[0J[04/09 000] [13G[1G[0J[04/09 000] [13G[1G[0J[04/09 000] [13G[1G[0J[04/09 000] [13G[1G[0J[04/09 000] [13G[1G[0J[04/09 000] [13G[1G[0J[04/09 000] [13G[1G[0J[04/09 000] [13G[1G[0J[04/09 000] [13G[1G[0J[04/09 000] [13G[1G[0J[05/09 000] [13G[1G[0J[05/09 000] [13G[1G[0J[06/09 000] [13G[1G[0J[06/09 000] [13G[1G[0J[06/09 000] [13G[1G[0J[06/09 000] [13G[1G[0J[06/09 000] [13G[1G[0J[07/09 000] [13G[1G[0J[07/09*000] [13G[1G[0J[07/09*000] [13G[1G[0J[07/09*000] [13G[1G[0J[08/09*000] [13G[1G[0J[08/09*000] [13G[1G[0J[08/09*000] [13G[1G[0J[08/09*000] [13G[1G[0J[08/09*000] [13G[1G[0J[08/09*000] [13G[1G[0J[08/09*000] [13G[1G[0J[08/09*000] [13G[1G[0J[08/09*000] [13Gm[1G[0J[08/09*000] m[14G[1G[0J[09/09*000] m[14G[1G[0J[09/09*000] m[14G[1G[0J[09/09*000] m[14G[1G[0J[09/09*000] m[14G[1G[0J[09/09*000] m[14G[1G[0J[09/09*000] m[14G[1G[0J[09/09*000] m[14G[1G[0J[09/09*000] m[14G[1G[0J[09/09*000] m[14G[1G[0J[09/09*000] m[14G[1G[0J[09/09*000] m[14G[1G[0J[09/09*000] m[14G[1G[0J[09/09*000] m[14G[1G[0J[09/09*000] m[14G[1G[0J[09/09*000] m[14G[1G[0J[09/09*000] m[14G[1G[0J[09/09*000] m[14G[1G[0J[09/09*000] m[14G[1G[0J[09/09*000] m[14Go[1G[0J[09/09*000] mo[15G[1G[0J[09/09*000] mo[15G[1G[0J[09/09o000] mo[15G[1G[0J[09/09*000] mo[15G[1G[0J[09/09*000] mo[15G[1G[0J[09/09*000] mo[15G[1G[0J[09/09*000] mo[15G[1G[0J[09/09*000] mo[15G[1G[0J[09/09*000] mo[15Gn[1G[0J[09/09*000] mon[16G[1G[0J[09/09*000] mon[16G[1G[0J[09/09*000] mon[16G[1G[0J[09/09*000] mon[16G[1G[0J[09/09*000] mon[16G[1G[0J[09/09*000] mon[16G[1G[0J[09/09*000] mon[16G[1G[0J[09/09*000] mon[16G[1G[0J[09/09*000] mon[16G[1G[0J[09/09*000] mon[16Gi[1G[0J[09/09*000] moni[17G[1G[0J[09/09*000] moni[17G[1G[0J[09/09*000] moni[17G[1G[0J[09/09*000] moni[17G[1G[0J[09/09*000] moni[17G[1G[0J[09/09*000] moni[17Gt[1G[0J[09/09o000] monit[18Go[1G[0J[09/09.000] monito[19Gr[1G[0J[09/09 000] monitor[20G[1G[0J[09/09 000] monitor[20G all
+[1G[2Kmonitor on
+[1G[0J[09/09 000] [13G[1G[0J[09/09 000] [13G[1G[2K[upnp] unavailable: Router has no public IPv4 address (possibly double NAT)
+[1G[0J[09/09 000] [13Gpeers
+[1G[2KId  Flags  Peer                  Agent
+--  -----  --------------------  -----------------------------------------------
+p1  OZLU   67.81.34.45:8083      gtk-gnutella/1.3.1 (20..09; GTK2; Linux x86_64)
+p2  OZLU   96.65.68.199:25262    gtk-gnutella/1.3.1-2-g..09; GTK2; Linux x86_64)
+p3  OZ-U   93.190.202.83:36021   gtk-gnutella/1.3.1 (20..3-09; GTK2; Linux i686)
+p4  OZLU   213.229.111.224:4876  gtk-gnutella/1.3.2-21-.. Topless; Linux x86_64)
+p5  OZLU   213.193.1.150:56739   gtk-gnutella/1.3.2-dir..12; GTK2; Linux x86_64)
+p6  OZLU   46.107.214.123:18616  gtk-gnutella/1.3.1 (20.. Topless; Linux x86_64)
+p7  OZ-U   146.70.245.74:40662   gtk-gnutella/1.3.1-dir..09; GTK2; Linux x86_64)
+p8  OZLU   186.125.225.1:60262   gtk-gnutella/1.3.2 (20..12; GTK2; Linux x86_64)
+p9  OZLU   202.92.108.64:1194    gtk-gnutella/1.3.1-2-g..09; GTK2; Linux x86_64)
+[1G[0J[09/09 000] [13G[1G[0J[09/09 000] [13G[1G[2K[rx] PONG id=00000000 ttl=1 hops=1 len=38 from=146.70.245.74:40662
+[1G[0J[09/09 000] [13Gsearch snse[1G[0J[09/09 000] search sns[23G[1G[0J[09/09 000] search sn[22G[1G[0J[09/09 000] search s[21G[1G[0J[09/09 000] search [20G[1G[2K[shares] count=0 totalKiB=0
+[1G[0J[09/09 000] search [20Gubuntu
+[1G[2K[tx] QUERY id=6dbc86af ttl=4 hops=0 len=9 to=67.81.34.45:8083
+[1G[0J[09/09 000] [13G[1G[2K[tx] QUERY id=6dbc86af ttl=4 hops=0 len=9 to=96.65.68.199:25262
+[1G[0J[09/09 000] [13G[1G[2K[tx] QUERY id=6dbc86af ttl=4 hops=0 len=9 to=93.190.202.83:36021
+[1G[0J[09/09 000] [13G[1G[2K[tx] QUERY id=6dbc86af ttl=4 hops=0 len=9 to=213.229.111.224:4876
+[1G[0J[09/09 000] [13G[1G[2K[tx] QUERY id=6dbc86af ttl=4 hops=0 len=9 to=213.193.1.150:56739
+[1G[0J[09/09 000] [13G[1G[2K[tx] QUERY id=6dbc86af ttl=4 hops=0 len=9 to=46.107.214.123:18616
+[1G[0J[09/09 000] [13G[1G[2K[tx] QUERY id=6dbc86af ttl=4 hops=0 len=9 to=146.70.245.74:40662
+[1G[0J[09/09 000] [13G[1G[2K[tx] QUERY id=6dbc86af ttl=4 hops=0 len=9 to=186.125.225.1:60262
+[1G[0J[09/09 000] [13G[1G[2K[tx] QUERY id=6dbc86af ttl=4 hops=0 len=9 to=202.92.108.64:1194
+[1G[0J[09/09 000] [13G[1G[2K[query tx] id=6dbc86af ttl=4 search="ubuntu"
+[1G[0J[09/09 000] [13G[1G[2Kq1: "ubuntu"
+[1G[0J[09/09 000] [13G[1G[0J[09/09 000] [13G[1G[2K[rx] QUERY_HIT id=6dbc86af ttl=4 hops=0 len=172 from=186.125.225.1:60262
+[1G[0J[09/09 000] [13G[1G[2K[query hit] query=6dbc86af #1 via=p8 remote=186.125.225.1:60262 size=4294967295 name="ubuntu-24.04.2-desktop-amd64.iso"
+[1G[0J[09/09 001] [13G[1G[2K[rx] QUERY_HIT id=6dbc86af ttl=4 hops=0 len=492 from=146.70.245.74:40662
+[1G[0J[09/09 001] [13G[1G[2K[query hit] query=6dbc86af #2 via=p7 remote=146.70.245.74:40662 size=3374387 name="[Wiley] Ubuntu Linux Toolbox 1000+ Commands for Ubuntu & Debian Power Users.pdf"
+[1G[0J[09/09 002] [13G[1G[2K[query hit] query=6dbc86af #3 via=p7 remote=146.70.245.74:40662 size=8554738 name="Ubuntu Linux Bible 11th Edition by David Clinton, Christopher Negus (Wiley 2025).pdf"
+[1G[0J[09/09 003] [13G[1G[2K[query hit] query=6dbc86af #4 via=p7 remote=146.70.245.74:40662 size=194100185 name="Linux Format 2020 - The Complete Ubuntu Manual.pdf"
+[1G[0J[09/09 004] [13G[1G[2K[rx] QUERY_HIT id=6dbc86af ttl=1 hops=1 len=222 from=67.81.34.45:8083
+[1G[0J[09/09 004] [13G[1G[2K[query hit] query=6dbc86af #5 via=p1 remote=5.228.113.42:52507 size=46249 name="ubuntu-14.10-desktop-i386.iso.torrent"
+[1G[0J[09/09 005] [13G[1G[2K[rx] QUERY_HIT id=6dbc86af ttl=1 hops=1 len=917 from=67.81.34.45:8083
+[1G[0J[09/09 005] [13G[1G[2K[query hit] query=6dbc86af #6 via=p1 remote=82.64.44.11:1352 size=958398464 name="ubuntu-20.04.1-live-server-amd64.iso"
+[1G[0J[09/09 006] [13G[1G[2K[query hit] query=6dbc86af #7 via=p1 remote=82.64.44.11:1352 size=922746880 name="ubuntu-16.04.7-server-amd64.iso"
+[1G[0J[09/09 007] [13G[1G[2K[query hit] query=6dbc86af #8 via=p1 remote=82.64.44.11:1352 size=4294967295 name="ubuntu-24.04-desktop-amd64.iso"
+[1G[0J[09/09 008] [13G[1G[2K[query hit] query=6dbc86af #9 via=p1 remote=82.64.44.11:1352 size=4294967295 name="ubuntu-20.04.3-desktop-amd64.iso"
+[1G[0J[09/09 009] [13G[1G[2K[query hit] query=6dbc86af #10 via=p1 remote=82.64.44.11:1352 size=4294967295 name="ubuntu-26.04-live-server-amd64.iso"
+[1G[0J[09/09 010] [13G[1G[2K[query hit] query=6dbc86af #11 via=p1 remote=82.64.44.11:1352 size=4294967295 name="ubuntu-26.04-desktop-amd64.iso"
+[1G[0J[09/09 011] [13G[1G[2K[query hit] query=6dbc86af #12 via=p1 remote=82.64.44.11:1352 size=4294967295 name="ubuntu-24.04-live-server-amd64.iso"
+[1G[0J[09/09 012] [13G[1G[2K[query hit] query=6dbc86af #13 via=p1 remote=82.64.44.11:1352 size=1016070144 name="ubuntu-18.04.6-live-server-amd64.iso"
+[1G[0J[09/09 013] [13G[1G[2K[rx] QUERY_HIT id=6dbc86af ttl=2 hops=1 len=285 from=213.229.111.224:4876
+[1G[0J[09/09 013] [13G[1G[2K[query hit] query=6dbc86af #14 via=p4 remote=88.162.28.252:6346 size=4294967295 name="ubuntu-24.04.4-desktop-amd64.iso"
+[1G[0J[09/09 014] [13G[1G[2K[rx] QUERY_HIT id=6dbc86af ttl=2 hops=1 len=251 from=93.190.202.83:36021
+[1G[0J[09/09 014] [13G[1G[2K[query hit] query=6dbc86af #15 via=p3 remote=62.209.14.85:6346 size=1374 name="Ubuntu.txt"
+[1G[0J[09/09 015] [13G[1G[2K[rx] QUERY_HIT id=6dbc86af ttl=1 hops=1 len=500 from=202.92.108.64:1194
+[1G[0J[09/09 015] [13G[1G[2K[query hit] query=6dbc86af #16 via=p9 remote=146.70.245.74:40662 size=3374387 name="[Wiley] Ubuntu Linux Toolbox 1000+ Commands for Ubuntu & Debian Power Users.pdf"
+[1G[0J[09/09 016] [13G[1G[2K[query hit] query=6dbc86af #17 via=p9 remote=146.70.245.74:40662 size=8554738 name="Ubuntu Linux Bible 11th Edition by David Clinton, Christopher Negus (Wiley 2025).pdf"
+[1G[0J[09/09 017] [13G[1G[2K[query hit] query=6dbc86af #18 via=p9 remote=146.70.245.74:40662 size=194100185 name="Linux Format 2020 - The Complete Ubuntu Manual.pdf"
+[1G[0J[09/09 018] [13G[1G[2K[rx] QUERY_HIT id=6dbc86af ttl=1 hops=1 len=219 from=186.125.225.1:60262
+[1G[0J[09/09 018] [13G[1G[2K[query hit] query=6dbc86af #19 via=p8 remote=159.26.119.7:31578 size=680782 name="Elisha_Cuthbert2-ubuntu.jpg"
+[1G[0J[09/09 019] [13G[1G[2K[query hit] query=6dbc86af #20 via=p8 remote=159.26.119.7:31578 size=35658 name="ubuntu-jessica-alba-wallpapers-3.jpg"
+[1G[0J[09/09 020] [13G[1G[2K[rx] QUERY_HIT id=6dbc86af ttl=2 hops=1 len=278 from=46.107.214.123:18616
+[1G[0J[09/09 020] [13G[1G[2K[query hit] query=6dbc86af #21 via=p6 remote=185.160.211.220:54321 size=430721 name="ubuntu-24.04-beta-desktop-amd64.iso.torrent"
+[1G[0J[09/09 021] [13G[1G[2K[rx] QUERY_HIT id=6dbc86af ttl=1 hops=3 len=288 from=186.125.225.1:60262
+[1G[0J[09/09 021] [13G[1G[2K[query hit] query=6dbc86af #22 via=p8 remote=5.29.21.182:19816 size=1237 name="ubuntu.png"
+[1G[0J[09/09 022] [13G[1G[2K[rx] PONG id=00000000 ttl=1 hops=5 len=71 from=46.107.214.123:18616
+[1G[0J[09/09 022] [13Gresults
+[1G[2Kq1: "ubuntu"
+No      Size  File
+--  --------  ------------------------------------------------------------------------------------
+ 1    4.0 gb  ubuntu-24.04.2-desktop-amd64.iso
+ 2    3.2 mb  [Wiley] Ubuntu Linux Toolbox 1000+ Commands for Ubuntu & Debian Power Users.pdf
+ 3    8.2 mb  Ubuntu Linux Bible 11th Edition by David Clinton, Christopher Negus (Wiley 2025).pdf
+ 4  185.1 mb  Linux Format 2020 - The Complete Ubuntu Manual.pdf
+ 5   45.2 kb  ubuntu-14.10-desktop-i386.iso.torrent
+ 6  914.0 mb  ubuntu-20.04.1-live-server-amd64.iso
+ 7  880.0 mb  ubuntu-16.04.7-server-amd64.iso
+ 8    4.0 gb  ubuntu-24.04-desktop-amd64.iso
+ 9    4.0 gb  ubuntu-20.04.3-desktop-amd64.iso
+10    4.0 gb  ubuntu-26.04-live-server-amd64.iso
+11    4.0 gb  ubuntu-26.04-desktop-amd64.iso
+12    4.0 gb  ubuntu-24.04-live-server-amd64.iso
+13  969.0 mb  ubuntu-18.04.6-live-server-amd64.iso
+14    4.0 gb  ubuntu-24.04.4-desktop-amd64.iso
+15    1.3 kb  Ubuntu.txt
+16    3.2 mb  [Wiley] Ubuntu Linux Toolbox 1000+ Commands for Ubuntu & Debian Power Users.pdf
+17    8.2 mb  Ubuntu Linux Bible 11th Edition by David Clinton, Christopher Negus (Wiley 2025).pdf
+18  185.1 mb  Linux Format 2020 - The Complete Ubuntu Manual.pdf
+19  664.8 kb  Elisha_Cuthbert2-ubuntu.jpg
+20   34.8 kb  ubuntu-jessica-alba-wallpapers-3.jpg
+21  420.6 kb  ubuntu-24.04-beta-desktop-amd64.iso.torrent
+22    1.2 kb  ubuntu.png
+[1G[0J[09/09 022] [13G[1G[0J[09/09 022] [13G[1G[2K[tx] PING id=76c5fe74 ttl=1 hops=0 len=0 to=67.81.34.45:8083
+[1G[0J[09/09 022] [13G[1G[2K[tx] PING id=76c5fe74 ttl=1 hops=0 len=0 to=96.65.68.199:25262
+[1G[0J[09/09 022] [13G[1G[2K[tx] PING id=76c5fe74 ttl=1 hops=0 len=0 to=93.190.202.83:36021
+[1G[0J[09/09 022] [13G[1G[2K[tx] PING id=76c5fe74 ttl=1 hops=0 len=0 to=213.229.111.224:4876
+[1G[0J[09/09 022] [13G[1G[2K[tx] PING id=76c5fe74 ttl=1 hops=0 len=0 to=213.193.1.150:56739
+[1G[0J[09/09 022] [13G[1G[2K[tx] PING id=76c5fe74 ttl=1 hops=0 len=0 to=46.107.214.123:18616
+[1G[0J[09/09 022] [13G[1G[2K[tx] PING id=76c5fe74 ttl=1 hops=0 len=0 to=146.70.245.74:40662
+[1G[0J[09/09 022] [13G[1G[2K[tx] PING id=76c5fe74 ttl=1 hops=0 len=0 to=186.125.225.1:60262
+[1G[0J[09/09 022] [13G[1G[2K[tx] PING id=76c5fe74 ttl=1 hops=0 len=0 to=202.92.108.64:1194
+[1G[0J[09/09 022] [13G[1G[2K[ping tx] id=76c5fe74 ttl=1
+[1G[0J[09/09 022] [13G[1G[2K[shares] count=0 totalKiB=0
+[1G[0J[09/09 022] [13G[1G[2K[rx] PONG id=76c5fe74 ttl=1 hops=0 len=57 from=96.65.68.199:25262
+[1G[0J[09/09 022] [13G[1G[2K[pong] 96.65.68.199:25262 files=60 kbytes=1048576
+[1G[0J[09/09 022] [13G[1G[2K[rx] PONG id=76c5fe74 ttl=1 hops=0 len=76 from=67.81.34.45:8083
+[1G[0J[09/09 022] [13G[1G[2K[pong] 67.81.34.45:8083 files=9940 kbytes=134217728
+[1G[0J[09/09 022] [13G[1G[2K[rx] PONG id=76c5fe74 ttl=1 hops=0 len=57 from=213.229.111.224:4876
+[1G[0J[09/09 022] [13G[1G[2K[pong] 213.229.111.224:4876 files=0 kbytes=8
+[1G[0J[09/09 022] [13G[1G[2K[rx] PONG id=76c5fe74 ttl=1 hops=0 len=57 from=213.193.1.150:56739
+[1G[0J[09/09 022] [13G[1G[2K[pong] 213.193.1.150:56739 files=72 kbytes=16777216
+[1G[0J[09/09 022] [13G[1G[2K[rx] PONG id=76c5fe74 ttl=1 hops=0 len=44 from=93.190.202.83:36021
+[1G[0J[09/09 022] [13G[1G[2K[pong] 93.190.202.83:36021 files=0 kbytes=8
+[1G[0J[09/09 022] [13G[1G[2K[rx] PONG id=76c5fe74 ttl=1 hops=0 len=57 from=46.107.214.123:18616
+[1G[0J[09/09 022] [13G[1G[2K[pong] 46.107.214.123:18616 files=0 kbytes=8
+[1G[0J[09/09 022] [13G[1G[2K[rx] PONG id=76c5fe74 ttl=1 hops=0 len=56 from=186.125.225.1:60262
+[1G[0J[09/09 022] [13G[1G[2K[pong] 186.125.225.1:60262 files=76687 kbytes=536870912
+[1G[0J[09/09 022] [13G[1G[2K[rx] PONG id=76c5fe74 ttl=1 hops=0 len=57 from=202.92.108.64:1194
+[1G[0J[09/09 022] [13G[1G[2K[pong] 202.92.108.64:1194 files=46 kbytes=33554432
+[1G[0J[09/09 022] [13G[1G[2K[rx] PONG id=76c5fe74 ttl=1 hops=0 len=71 from=146.70.245.74:40662
+[1G[0J[09/09 022] [13G[1G[2K[pong] 146.70.245.74:40662 files=101705 kbytes=8
+[1G[0J[09/09 022] [13G[1G[2K[rx] PONG id=00000000 ttl=1 hops=1 len=57 from=202.92.108.64:1194
+[1G[0J[09/09 022] [13G[1G[2K[rx] PONG id=00000000 ttl=1 hops=1 len=56 from=67.81.34.45:8083
+[1G[0J[09/09 022] [13G[1G[2K[rx] PONG id=00000000 ttl=1 hops=1 len=22 from=96.65.68.199:25262
+[1G[0J[09/09 022] [13G[1G[2K[rx] PONG id=00000000 ttl=1 hops=1 len=57 from=202.92.108.64:1194
+[1G[0J[09/09 022] [13G[1G[2K[rx] PONG id=00000000 ttl=1 hops=1 len=56 from=146.70.245.74:40662
+[1G[0J[09/09 022] [13G[1G[2K[rx] PONG id=00000000 ttl=1 hops=1 len=76 from=186.125.225.1:60262
+[1G[0J[09/09 022] [13G[1G[2K[rx] PONG id=00000000 ttl=1 hops=1 len=57 from=186.125.225.1:60262
+[1G[0J[09/09 022] [13G[1G[2K[shares] count=0 totalKiB=0
+[1G[0J[09/09 022] [13G
+Script done on 2026-11-03 19:18:11-06:00 [COMMAND_EXIT_CODE="0"]

@@ -137,6 +137,29 @@ describe("handshake policy", () => {
     ).toBeUndefined();
   });
 
+  test("handshake diagnostics include routing, compression, and unfamiliar headers", () => {
+    expect(
+      describeHandshakeResponse("GNUTELLA/0.6 200 OK", {
+        "x-query-routing": "0.2",
+        "x-ultrapeer-query-routing": "0.1",
+        "x-max-ttl": "4",
+        "x-requeries": "False",
+        "accept-encoding": "deflate",
+        "content-encoding": "deflate",
+        "pong-caching": "0.1",
+        ggep: "0.5",
+        "bye-packet": "0.1",
+        "X-Peer-Feature": "experimental",
+      }),
+    ).toBe(
+      "GNUTELLA/0.6 200 OK [X-Query-Routing=0.2; " +
+        "X-Ultrapeer-Query-Routing=0.1; X-Max-TTL=4; X-Requeries=False; " +
+        "Accept-Encoding=deflate; Content-Encoding=deflate; " +
+        "Pong-Caching=0.1; GGEP=0.5; Bye-Packet=0.1; " +
+        "X-Peer-Feature=experimental]",
+    );
+  });
+
   test("leaf compatibility headers apply to requests and responses without changing role", () => {
     const policy = localPolicy({ maxUltrapeerConnections: 2 });
     for (const headers of [

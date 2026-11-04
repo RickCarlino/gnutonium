@@ -13,8 +13,9 @@ export const DOWNLOAD_MAX_ACTIVE_PER_HOST = 2;
 export const DOWNLOAD_RETRY_LIMIT = 10;
 export const DOWNLOAD_RETRY_BACKOFF_SEC = 60;
 export const VERIFY_DOWNLOADS = true;
-export const MAX_ULTRAPEER_CONNECTIONS = 64;
-export const MAX_LEAF_CONNECTIONS = 64;
+export const LEAF_MAX_ULTRAPEER_CONNECTIONS = 3;
+export const MAX_ULTRAPEER_CONNECTIONS = 40;
+export const MAX_LEAF_CONNECTIONS = 100;
 export const CONNECT_TIMEOUT_MS = 5000;
 export const PING_INTERVAL_SEC = 60;
 export const RECONNECT_INTERVAL_SEC = 15;
@@ -92,22 +93,6 @@ export const CANONICAL_HEADER_NAMES: Record<string, string> = {
   "x-max-ttl": "X-Max-TTL",
   "private-data": "Private-Data",
 };
-
-export const INTERESTING_HANDSHAKE_HEADERS = [
-  "server",
-  "user-agent",
-  "x-try",
-  "x-try-ultrapeers",
-  "x-ultrapeer",
-  "x-ultrapeer-needed",
-  "x-dynamic-querying",
-  "x-ext-probes",
-  "x-degree",
-  "upgrade",
-  "connection",
-  "listen-ip",
-  "remote-ip",
-] as const;
 
 export const BASE32_ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
 
