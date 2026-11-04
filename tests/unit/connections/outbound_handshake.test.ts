@@ -3,6 +3,7 @@ import type net from "node:net";
 import path from "node:path";
 import { PeerConnections } from "../../../src/connections/connections";
 import { makeNode, MockSocket, withTempDir } from "../../helpers/protocol";
+import { ManualTimers } from "../../helpers/timers";
 
 class DialSocket extends MockSocket {
   timeouts: number[] = [];
@@ -19,7 +20,14 @@ class DialSocket extends MockSocket {
   }
 }
 
-test.each(["headers", "write", "error", "close", "timeout"] as const)(
+test.each([
+  "headers",
+  "write",
+  "error",
+  "close",
+  "timeout",
+  "oversized",
+] as const)(
   "outbound %s failures settle the dial and release socket listeners and timeout",
   async (failure) => {
     await withTempDir(async (dir) => {
@@ -52,6 +60,7 @@ test.each(["headers", "write", "error", "close", "timeout"] as const)(
           error: "socket failed",
           close: "socket closed during handshake",
           timeout: "connect timeout",
+          oversized: "handshake headers too large",
         }[failure];
         queueMicrotask(() => {
           if (failure === "write") socket.writeError = new Error(message);
@@ -59,6 +68,11 @@ test.each(["headers", "write", "error", "close", "timeout"] as const)(
             socket.emit("connect");
           else if (failure === "error")
             socket.emit("error", new Error(message));
+          else if (failure === "oversized")
+            socket.emit(
+              "data",
+              `GNUTELLA/0.6 200 OK\r\nX-Padding: ${"x".repeat(65536)}\r\n\r\n`,
+            );
           else socket.emit(failure);
         });
         await expect(dial).rejects.toThrow(message);
@@ -79,3 +93,26 @@ test.each(["headers", "write", "error", "close", "timeout"] as const)(
     });
   },
 );
+
+test("outbound handshake deadline cannot be extended by trickled bytes", async () => {
+  const timers = new ManualTimers();
+  const socket = new MockSocket();
+  const node = makeNode("/tmp/outbound-deadline-test/config.json", {
+    collaborators: {
+      scheduler: timers.scheduler,
+      netFactory: { createConnection: () => socket as never },
+    },
+  });
+  try {
+    const dial = node.connections.connectPeer06("9.8.7.6", 6346, 100);
+    socket.emit("connect");
+    timers.advance(90);
+    socket.emit("data", "GNUTELLA/0.6 200 OK\r\n");
+    timers.advance(10);
+    await expect(dial).rejects.toThrow("connect timeout");
+    expect(socket.destroyed).toBe(true);
+    expect(timers.pending.size).toBe(0);
+  } finally {
+    await node.stop();
+  }
+});

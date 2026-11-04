@@ -39,7 +39,10 @@ type RouterDependencies = {
   shares: Pick<ShareLibrary, "list" | "matches" | "totalSharedKBytes">;
   search: Pick<SearchService, "ingest">;
   discoveredPeer: (host: string, port: number) => void;
-  fulfillPush: (push: ReturnType<typeof parsePush>) => Promise<void>;
+  fulfillPush: (
+    push: ReturnType<typeof parsePush>,
+    reporterHost?: string,
+  ) => Promise<void>;
   transport: Pick<
     PeerConnections,
     | "peers"

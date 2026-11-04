@@ -4,7 +4,7 @@
 
 You can:
 
-- download a prebuilt binary from the [releases page](https://github.com/RickCarlino/gnutella-bun-client/releases)
+- download a prebuilt binary from the [releases page](https://github.com/gnutonium/Gnutonium/releases)
 - install with `npm install -g gnutonium` (requires Bun 1.4.4 or newer)
 - run from source with Bun 1.4.4 or newer
 
@@ -27,6 +27,17 @@ bun run bin/gnutonium.ts
 ```
 
 If you are using a compiled binary, replace `gnutonium` with the executable path.
+
+The Docker image runs as UID/GID `65532:65532`. A named volume mounted at
+`/data` inherits the image's writable directory; bind-mounted data directories
+must be writable by that UID/GID.
+
+For an Ubuntu load-test host, `scripts/digital-ocean.sh` defaults to TCP port
+`6346`. When invoked as root, it installs root-owned runtime code in
+`/opt/gnutonium` and runs initialization and the client as the `gnutonium`
+service account, with state in `/var/lib/gnutonium`. `GNUTONIUM_USER`,
+`GNUTONIUM_RUNTIME_ROOT`, `GNUTONIUM_STATE_DIR`, and `CONFIG_PATH` override these
+locations; custom config directories must be accessible to the service account.
 
 ## 2. Create A Config
 

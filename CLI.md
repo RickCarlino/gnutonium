@@ -8,7 +8,7 @@ If you just want to get connected and run your first search, start with [QUICKST
 
 You can run Gnutonium either as a prebuilt binary or directly from the source checkout.
 
-Prebuilt binaries are available on the [releases page](https://github.com/RickCarlino/gnutella-bun-client/releases).
+Prebuilt binaries are available on the [releases page](https://github.com/gnutonium/Gnutonium/releases).
 
 If you're running from source, install the dependencies first:
 

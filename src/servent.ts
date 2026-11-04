@@ -206,7 +206,8 @@ export class GnutellaServent {
       shares: this.shareLibrary,
       search: this.search,
       discoveredPeer: (...args) => this.discovery.addKnownPeer(...args),
-      fulfillPush: (push) => this.transfers.fulfillPush(push),
+      fulfillPush: (push, reporterHost) =>
+        this.transfers.fulfillPush(push, reporterHost),
       transport: this.connections,
     });
     this.transfers = new TransferService({
@@ -215,6 +216,7 @@ export class GnutellaServent {
       emit: (event) => this.emitEvent(event),
       serventId: this.serventId,
       network: this.collaborators.netFactory,
+      scheduler: this.collaborators.scheduler,
       address: this.localAddress,
       shares: this.shareLibrary,
       router: this.router,

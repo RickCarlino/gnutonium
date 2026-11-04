@@ -10,6 +10,8 @@ RUN bun build \
   --outfile=/out/gnutonium \
   ./bin/gnutonium.ts
 
+RUN mkdir /data && chown 65532:65532 /data
+
 FROM scratch
 
 COPY --from=build /out/gnutonium /gnutonium
@@ -17,7 +19,10 @@ COPY --from=build /lib/ld-musl-x86_64.so.1 /lib/ld-musl-x86_64.so.1
 COPY --from=build /usr/lib/libstdc++.so.6 /usr/lib/libstdc++.so.6
 COPY --from=build /usr/lib/libgcc_s.so.1 /usr/lib/libgcc_s.so.1
 COPY --from=build /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
+COPY --from=build --chown=65532:65532 /data /data
 
+USER 65532:65532
+WORKDIR /data
 VOLUME ["/data"]
 
 ENTRYPOINT ["/gnutonium"]

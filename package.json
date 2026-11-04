@@ -1,6 +1,6 @@
 {
   "name": "gnutonium",
-  "version": "2.1.2",
+  "version": "2.1.3",
   "description": "Gnutonium is a small Gnutella client for Bun, usable as a CLI or TypeScript library.",
   "license": "GPL-3.0-only",
   "bin": {
@@ -35,13 +35,13 @@
     "bun",
     "cli"
   ],
-  "homepage": "https://github.com/RickCarlino/gnutella-bun-client#readme",
+  "homepage": "https://github.com/gnutonium/Gnutonium#readme",
   "bugs": {
-    "url": "https://github.com/RickCarlino/gnutella-bun-client/issues"
+    "url": "https://github.com/gnutonium/Gnutonium/issues"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/RickCarlino/gnutella-bun-client.git"
+    "url": "git+https://github.com/gnutonium/Gnutonium.git"
   },
   "packageManager": "bun@1.4.4",
   "dependencies": {},

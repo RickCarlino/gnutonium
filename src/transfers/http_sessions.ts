@@ -1,8 +1,6 @@
 import type net from "node:net";
-import { errMsg, toBuffer, ts } from "../shared";
+import { toBuffer } from "../shared";
 import { socketCanEnd } from "../transport/socket_utils";
-import { parsePush } from "../wire/codec";
-import { findHeaderEnd } from "../wire/handshake";
 import { boundedHttpHeaderEnd, parseHttpHeaders } from "../wire/http";
 import type { PendingTransfer, TransferService } from "./service";
 import type { HttpSession, HttpSessionRequest } from "./session_types";
@@ -167,56 +165,6 @@ export function shiftPendingPush(
   if (queue.length) transfers.pendingPushes.set(serventIdHex, queue);
   else transfers.pendingPushes.delete(serventIdHex);
   return pending;
-}
-
-/** Connect back to a requester and offer the selected share. */
-export async function fulfillPush(
-  transfers: TransferService,
-  push: ReturnType<typeof parsePush>,
-): Promise<void> {
-  const share = transfers.deps.shares.byIndex(push.fileIndex);
-  if (!share) return;
-  transfers.deps.emit({
-    type: "PUSH_REQUESTED",
-    at: ts(),
-    fileIndex: share.index,
-    fileName: share.name,
-    ip: push.ip,
-    port: push.port,
-  });
-  const socket = transfers.createConnection({
-    host: push.ip,
-    port: push.port,
-  });
-  socket.setNoDelay(true);
-  socket.setTimeout(transfers.config().downloadTimeoutMs, () =>
-    socket.destroy(new Error("push connect timeout")),
-  );
-  socket.on("error", (error) =>
-    transfers.deps.emit({
-      type: "PUSH_CALLBACK_FAILED",
-      at: ts(),
-      message: errMsg(error),
-    }),
-  );
-  socket.on("connect", () => {
-    socket.write(
-      `GIV ${share.index}:${transfers.deps.serventId.toString("hex")}/${share.name}\n\n`,
-    );
-  });
-
-  let buf = Buffer.alloc(0);
-  const onData = (chunk: string | Buffer) => {
-    buf = Buffer.concat([buf, toBuffer(chunk)]);
-    const raw = buf.toString("latin1");
-    const cut = findHeaderEnd(raw);
-    if (cut === -1) return;
-    const head = raw.slice(0, cut);
-    const rest = buf.subarray(cut);
-    socket.off("data", onData);
-    transfers.startHttpSession(socket, head, rest);
-  };
-  socket.on("data", onData);
 }
 
 /** Reject and remove expired push callback requests. */

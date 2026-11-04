@@ -1,13 +1,8 @@
-import { findHeaderEnd } from "./handshake";
+import { boundedHeaderEnd } from "./handshake";
 
 /** Bound headers without counting an already-arrived response body. */
 export function boundedHttpHeaderEnd(raw: string): number {
-  const limit = 64 * 1024;
-  const cut = findHeaderEnd(raw.slice(0, limit));
-  if (cut === -1 && raw.length >= limit) {
-    throw new Error("HTTP headers too large");
-  }
-  return cut;
+  return boundedHeaderEnd(raw, "HTTP");
 }
 
 /** Parse HTTP headers with lowercase field names. */

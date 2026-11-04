@@ -1,6 +1,7 @@
 import {
   CANONICAL_HEADER_NAMES,
   INTERESTING_HANDSHAKE_HEADERS,
+  MAX_HEADER_BYTES,
 } from "../const";
 import { normalizeIpv4, parsePeer } from "../discovery/addresses";
 import type { PeerAddr } from "../types";
@@ -90,6 +91,18 @@ export function findHeaderEnd(raw: string): number {
   if (crlf !== -1 && (lf === -1 || crlf < lf)) return crlf + 4;
   if (lf !== -1) return lf + 2;
   return -1;
+}
+
+/** Bound a header without counting coalesced body or TLS bytes. */
+export function boundedHeaderEnd(
+  raw: string,
+  protocol = "handshake",
+): number {
+  const cut = findHeaderEnd(raw.slice(0, MAX_HEADER_BYTES));
+  if (cut === -1 && raw.length >= MAX_HEADER_BYTES) {
+    throw new Error(`${protocol} headers too large`);
+  }
+  return cut;
 }
 
 function appendContinuationLine(

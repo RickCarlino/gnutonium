@@ -2,9 +2,9 @@ import type net from "node:net";
 import { errMsg, normalizeIpv4, normalizePeer, toBuffer } from "../shared";
 import type { PeerCapabilities, PeerRole } from "../types";
 import {
+  boundedHeaderEnd,
   buildHandshakeBlock,
   describeHandshakeResponse,
-  findHeaderEnd,
   hasToken,
   mergeHeaders,
   parseHandshakeBlock,
@@ -53,6 +53,7 @@ export async function connectPeer06(
     let buf = Buffer.alloc(0);
 
     const cleanup = () => {
+      if (deadline) connections.deps.scheduler.clearTimeout(deadline);
       socket.setTimeout(0);
       socket.off("timeout", onTimeout);
       socket.off("error", fail);
@@ -224,6 +225,10 @@ export async function connectPeer06(
     socket.on("connect", onConnect);
     socket.on("data", onData);
     socket.setTimeout(timeoutMs, onTimeout);
+    const deadline = connections.deps.scheduler.setTimeout(
+      onTimeout,
+      timeoutMs,
+    );
   });
 }
 
@@ -235,7 +240,7 @@ function parseOutboundHandshakeResult(
   compressionEnabled: boolean,
 ): OutboundHandshakeResult | undefined {
   const raw = buf.toString("latin1");
-  const cut = findHeaderEnd(raw);
+  const cut = boundedHeaderEnd(raw);
   if (cut === -1) return undefined;
 
   const { startLine, headers } = parseHandshakeBlock(raw.slice(0, cut));

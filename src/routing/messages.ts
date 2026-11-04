@@ -160,13 +160,13 @@ export function onQueryHit(
 /** Fulfill a local push request or forward it toward its owner. */
 export async function onPush(
   router: MessageRouter,
-  _peer: Peer,
+  peer: Peer,
   hdr: RoutedDescriptor,
   payload: Buffer,
 ): Promise<void> {
   const push = parsePush(payload);
   if (push.serventIdHex === router.deps.serventId.toString("hex")) {
-    await router.deps.fulfillPush(push);
+    await router.deps.fulfillPush(push, peer.socket.remoteAddress);
     return;
   }
   if (router.deps.transport.nodeMode() === "leaf") return;

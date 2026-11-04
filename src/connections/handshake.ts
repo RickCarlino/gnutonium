@@ -11,8 +11,8 @@ import {
 } from "../shared";
 import type { PeerCapabilities, PeerRole } from "../types";
 import {
+  boundedHeaderEnd,
   buildHandshakeBlock,
-  findHeaderEnd,
   hasToken,
   mergeHeaders,
   parseHandshakeBlock,
@@ -119,6 +119,12 @@ export function handleProbe(
   socket.on("end", ctx.onEnd);
   socket.on("close", ctx.onClose);
   socket.on("error", ctx.onError);
+  const deadline = connections.deps.scheduler.setTimeout(() => {
+    terminateProbeEarly(connections, ctx, "timeout");
+    socket.destroy();
+  }, connections.config().connectTimeoutMs);
+  ctx.cancelDeadline = () =>
+    connections.deps.scheduler.clearTimeout(deadline);
 }
 
 /** Advance an inbound probe using buffered bytes. */
@@ -169,7 +175,7 @@ export function handleInbound06Probe(
   ctx: ProbeCtx,
   raw: string,
 ): void {
-  const cut = findHeaderEnd(raw);
+  const cut = boundedHeaderEnd(raw);
   if (cut === -1) return;
   const { startLine, headers } = parseHandshakeBlock(raw.slice(0, cut));
   emitHandshakeBlock(
@@ -248,7 +254,7 @@ export function finishInbound06Probe(
   ctx: ProbeCtx,
 ): void {
   const raw = ctx.buf.toString("latin1");
-  const cut = findHeaderEnd(raw);
+  const cut = boundedHeaderEnd(raw);
   if (cut === -1) return;
   const { startLine, headers } = parseHandshakeBlock(raw.slice(0, cut));
   connections.absorbHandshakeHeaders(headers, ctx.socket.remoteAddress);
@@ -296,6 +302,8 @@ export function finishInbound06Probe(
 }
 
 function clearProbeListeners(ctx: ProbeCtx): void {
+  ctx.cancelDeadline?.();
+  ctx.cancelDeadline = undefined;
   if (ctx.onData) ctx.socket.off("data", ctx.onData);
   if (ctx.onEnd) ctx.socket.off("end", ctx.onEnd);
   if (ctx.onClose) ctx.socket.off("close", ctx.onClose);
@@ -554,7 +562,7 @@ export function rejectLegacyInboundProbe(
   _connections: PeerConnections,
   raw: string,
 ): void {
-  const cut = findHeaderEnd(raw);
+  const cut = boundedHeaderEnd(raw);
   if (cut === -1) return;
   const { startLine } = parseHandshakeBlock(raw.slice(0, cut));
   throw new Error(`unsupported inbound handshake: ${startLine}`);
@@ -583,7 +591,7 @@ export function startGivProbeSession(
   ctx: ProbeCtx,
   raw: string,
 ): void {
-  const cut = findHeaderEnd(raw);
+  const cut = boundedHeaderEnd(raw, "GIV");
   if (cut === -1) return;
   ctx.mode = "done";
   clearProbeListeners(ctx);

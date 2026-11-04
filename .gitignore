@@ -7,4 +7,5 @@ node_modules/
 /downloads.json
 /share-index.json
 .codex
-gtk-gnutella-REFERENCE-ONLY/ # GTK Gnutella is our compatibility target. We keep a ref copy of source around for that purpose.
+# GTK Gnutella is our compatibility target; keep the reference checkout local.
+gtk-gnutella-REFERENCE-ONLY/

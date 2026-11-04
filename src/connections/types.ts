@@ -10,6 +10,7 @@ export type ProbeCtx = {
   mode: "undecided" | "await-final-0.6" | "done";
   requestHeaders?: Record<string, string>;
   serverHeaders?: Record<string, string>;
+  cancelDeadline?: () => void;
   onData?: (chunk: string | Buffer) => void;
   onEnd?: () => void;
   onClose?: (hadError: boolean) => void;

@@ -15,6 +15,7 @@ import type {
 import { randomId16 } from "../wire/ids";
 import * as transfer from "./download";
 import * as http from "./http_sessions";
+import { fulfillPush } from "./push_upload";
 import * as files from "./serve_files";
 import type { HttpDownloadResult, TransferOptions } from "./types";
 
@@ -30,6 +31,10 @@ type TransferDependencies = {
   network: Pick<
     GnutellaServentCollaborators["netFactory"],
     "createConnection"
+  >;
+  scheduler: Pick<
+    GnutellaServentCollaborators["scheduler"],
+    "setTimeout" | "clearTimeout"
   >;
   address: Pick<
     LocalAddress,
@@ -88,9 +93,9 @@ export class TransferService {
 
   /** Connect back to a requester and offer the selected share. */
   fulfillPush(
-    ...args: OwnerArguments<Parameters<typeof http.fulfillPush>>
-  ): ReturnType<typeof http.fulfillPush> {
-    return http.fulfillPush(this, ...args);
+    ...args: OwnerArguments<Parameters<typeof fulfillPush>>
+  ): ReturnType<typeof fulfillPush> {
+    return fulfillPush(this, ...args);
   }
 
   /** Reject waiting pushes and destroy transfer sockets. */

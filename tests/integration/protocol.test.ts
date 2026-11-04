@@ -578,7 +578,7 @@ describe("Integration suite (0.6)", () => {
         `GET /get/${resumeShare!.index}/${resumeShare!.name}/ HTTP/1.0\r\nConnection: close\r\nRange: bytes=7-\r\n\r\n`,
       );
       expect(ranged).toContain("HTTP/1.0 206 Partial Content\r\n");
-      expect(ranged).toContain("Server: Gnutonium/2.1.2\r\n");
+      expect(ranged).toContain("Server: Gnutonium/2.1.3\r\n");
       expect(ranged).toContain("Content-Length: 6\r\n");
       expect(ranged).toContain("Content-Range: bytes 7-12/13\r\n");
       expect(ranged.endsWith("from-b")).toBe(true);
