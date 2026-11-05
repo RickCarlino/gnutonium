@@ -95,12 +95,10 @@ export async function cliConfig(dir: string, cachePort: number) {
   await writeDoc(configPath, doc);
   return { configPath, doc };
 }
-export function cliInvocation(configPath: string): string[] {
+export function cliInvocation(configPath?: string): string[] {
   const binary = process.env.GNUTONIUM_CLI_BINARY;
   return [
     ...(binary ? [binary] : [process.execPath, "run", "bin/gnutonium.ts"]),
-    "run",
-    "--config",
-    configPath,
+    ...(configPath ? ["run", "--config", configPath] : []),
   ];
 }

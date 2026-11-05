@@ -30,6 +30,8 @@ bun run bin/gnutonium.ts
 
 If you're using a compiled binary somewhere else on your system, substitute its path as needed.
 
+Print the installed version with `gnutonium -v` or `gnutonium --version`.
+
 ## First-Time Setup
 
 Create a config file:

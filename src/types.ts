@@ -50,6 +50,7 @@ export type ParsedCli = {
   config: string;
   exec: string[];
   command: string;
+  version: boolean;
 };
 
 export type PeerAddr = { host: string; port: number };

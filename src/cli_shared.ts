@@ -463,14 +463,17 @@ export function parseCli(
   let config = defaultConfig;
   const exec: string[] = [];
   let command = "run";
+  const flags = new Set<string>();
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     if (a === "--config") config = argv[++i] || config;
     else if (a.startsWith("--config=")) config = a.slice(9);
     else if (a === "--exec") exec.push(argv[++i] || "");
-    else if (!a.startsWith("-") && command === "run") command = a;
+    else if (a.startsWith("-")) flags.add(a);
+    else if (command === "run") command = a;
   }
-  return { config, exec, command };
+  const version = ["-v", "--version"].some((flag) => flags.has(flag));
+  return { config, exec, command, version };
 }
 
 export { errMsg };

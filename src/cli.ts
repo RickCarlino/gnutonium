@@ -5,9 +5,11 @@ import { completionContext, readlineCompletion } from "./cli/complete";
 import { safeTerminalText } from "./cli/output";
 import { CommandRunner, runExecCommands } from "./cli/runner";
 import { watchStatus } from "./cli/status";
+import { notifyOfUpdate } from "./cli/updates";
 import { monitorAllowsEvent, type MonitorMode } from "./cli_monitor";
 import { displayResultCount, errMsg, parseCli } from "./cli_shared";
 import {
+  APP_VERSION,
   CLI_SHUTDOWN_TIMEOUT_MS,
   PROMPT_THROBBER_FRAMES,
   PROMPT_THROBBER_INTERVAL_MS,
@@ -458,8 +460,15 @@ function startRepl(
 }
 
 /** Run CLI initialization, scripted commands, or interactive mode. */
-export async function main(argv = process.argv.slice(2)) {
+export async function main(
+  argv = process.argv.slice(2),
+  notifyUpdate = notifyOfUpdate,
+) {
   const cli = parseCli(argv, "gnutella.json");
+  if (cli.version) {
+    console.log(APP_VERSION);
+    return;
+  }
   if (cli.command === "status") {
     if (cli.exec.length) throw new Error("status does not accept --exec");
     await watchStatus(cli.config);
@@ -518,6 +527,7 @@ export async function main(argv = process.argv.slice(2)) {
   });
 
   await node.start();
+  void notifyUpdate((message) => log(session, message));
   const rl = startRepl(session, cli.exec);
   rl?.on("close", () => {
     void shutdown();

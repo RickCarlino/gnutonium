@@ -7,14 +7,11 @@
 (Screenshot: Gnutonium's download monitor. Keep the client running and run
 `gnutonium status --config gnutella.json` to view active downloads [docs](CLI.md#status-panel) for more details.)
 
+Gnutonium is a text-based client for Gnutella, a peer-to-peer file sharing network with [decades of history and thousands of active users](https://rickcarlino.com/notes/p2p/gnutella-explanation.html).
 
-**Don't know what Gnutella is?:** Read my overly enthusiastic explanation [here](https://rickcarlino.com/notes/p2p/gnutella-explanation.html).
+You can use it as a standalone TUI application or embed it into a Bun application as a library.
 
-Gnutonium is a single-file, text-based Gnutella client.
-You can also use it as an embedded Gnutella engine in your own TypeScript app.
-
-It is compatible with major clients on the Gnutella network in 2026 like GTK-Gnutella, Phex, Shareaza and others.
-It is portable, requiring a single executable. We strive to reduce the number of third party dependencies where possible.
+It is compatible with major clients like GTK-Gnutella, Phex, Shareaza, Limewire and others.
 
 ## Prebuilt Binaries
 

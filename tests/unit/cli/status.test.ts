@@ -27,6 +27,7 @@ test("status accepts both config syntaxes", () => {
       command: "status",
       config: "some file.json",
       exec: [],
+      version: false,
     });
 });
 

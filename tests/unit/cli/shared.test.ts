@@ -358,13 +358,28 @@ describe("cli_shared", () => {
       command: "init",
       config: "custom.json",
       exec: ["query alpha", ""],
+      version: false,
     });
 
     expect(parseCli(["--config"], "default.json")).toEqual({
       command: "run",
       config: "default.json",
       exec: [],
+      version: false,
     });
+  });
+
+  test("parses version flags without interpreting option values as flags", () => {
+    for (const flag of ["-v", "--version"]) {
+      expect(parseCli([flag], "default.json").version).toBe(true);
+      expect(parseCli(["run", flag], "default.json").version).toBe(true);
+      expect(parseCli(["--config", flag], "default.json").version).toBe(
+        false,
+      );
+      expect(parseCli(["--exec", flag], "default.json").version).toBe(
+        false,
+      );
+    }
   });
 
   test("runs exec commands after sleeping, logs failures, and stops on false", async () => {
